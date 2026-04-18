@@ -8,6 +8,7 @@
 
 import { Accordion ,  ContextLoader } from "@/components";
 import { Badge  } from "@/components";
+import { Tooltip } from "@/components/primitives";
 import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 
 import { useSegmentProvenance } from "./hooks/use-provenance";
@@ -33,15 +34,16 @@ function CopyableHash({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-2">
       <span className="text-xs text-[var(--color-text-muted)]">{label}</span>
-      <button
-        type="button"
-        onClick={() => copy(value)}
-        title="Copy to clipboard"
-        data-testid={`copy-${label.toLowerCase().replace(/\s+/g, "-")}`}
-        className={`${TYPO_DATA_MUTED} truncate max-w-48 hover:text-[var(--color-text-primary)] transition-colors`}
-      >
-        {copied ? "Copied!" : value}
-      </button>
+      <Tooltip content="Copy to clipboard">
+        <button
+          type="button"
+          onClick={() => copy(value)}
+          data-testid={`copy-${label.toLowerCase().replace(/\s+/g, "-")}`}
+          className={`${TYPO_DATA_MUTED} truncate max-w-48 hover:text-[var(--color-text-primary)] transition-colors`}
+        >
+          {copied ? "Copied!" : value}
+        </button>
+      </Tooltip>
     </div>
   );
 }

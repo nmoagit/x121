@@ -5,7 +5,7 @@
  * Active tab is managed via URL search param `?tab=`.
  */
 
-import { useLocation, useNavigate, useParams, useSearch } from "@tanstack/react-router";
+import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useMemo } from "react";
 
 import { Tabs } from "@/components/composite";
@@ -15,6 +15,7 @@ import { LoadingPane } from "@/components/primitives";
 import { useSetting } from "@/features/settings/hooks/use-settings";
 import { formatDate } from "@/lib/format";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
+import { usePipelinePrefix, useProjectPath } from "@/hooks/usePipelinePath";
 import { AlertCircle, ChevronRight, Users } from "@/tokens/icons";
 
 import { useProject, useProjectStats } from "./hooks/use-projects";
@@ -36,16 +37,17 @@ export function ProjectDetailPage() {
   const id = Number(projectId);
 
   const navigate = useNavigate();
-  const location = useLocation();
+  const withPrefix = usePipelinePrefix();
+  const projectPathFn = useProjectPath();
   const { tab: tabParam, group: groupParam } = useSearch({ strict: false }) as {
     tab?: string;
     group?: string;
   };
 
-  // Derive base path from current location so links work under both
-  // root (/projects/8) and pipeline (/pipelines/x121/projects/8) routes.
-  const basePath = location.pathname;
-  const projectsPath = basePath.replace(/\/projects\/\d+.*/, "/projects");
+  // Pipeline-aware links work under both root (/projects/8) and
+  // pipeline (/pipelines/x121/projects/8) routes and keep the router basepath.
+  const projectsPath = withPrefix("/projects");
+  const reviewAssignmentsPath = projectPathFn(id, "/review-assignments");
 
   const { data: project, isLoading, error } = useProject(id);
   const { data: stats } = useProjectStats(id);
@@ -94,9 +96,9 @@ export function ProjectDetailPage() {
     <Stack gap={6}>
       {/* Breadcrumb */}
       <nav className="flex items-center gap-[var(--spacing-1)] text-sm font-mono text-[var(--color-text-muted)]">
-        <a href={projectsPath} className="hover:text-[var(--color-text-primary)] transition-colors">
+        <Link to={projectsPath} className="hover:text-[var(--color-text-primary)] transition-colors">
           Projects
-        </a>
+        </Link>
         <ChevronRight size={14} aria-hidden />
         <span className="text-[var(--color-text-primary)] font-medium">{project.name}</span>
       </nav>
@@ -118,13 +120,13 @@ export function ProjectDetailPage() {
             Updated {formatDate(project.updated_at)}
           </p>
         </div>
-        <a
-          href={`${basePath}/review-assignments`}
+        <Link
+          to={reviewAssignmentsPath}
           className="inline-flex items-center gap-[var(--spacing-1)] rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] px-3 py-1.5 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)] transition-colors"
         >
           <Users size={14} />
           Review Assignments
-        </a>
+        </Link>
       </div>
 
       {/* Tabs */}

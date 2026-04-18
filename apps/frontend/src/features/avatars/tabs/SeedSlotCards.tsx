@@ -14,7 +14,7 @@ import { cn } from "@/lib/cn";
 import { variantThumbnailUrl } from "@/features/media/utils";
 import type { MediaVariant } from "@/features/media/types";
 
-import { ContextLoader } from "@/components/primitives";
+import { ContextLoader, Tooltip } from "@/components/primitives";
 import { useMediaVariants } from "@/features/media/hooks/use-media-variants";
 
 import type { SeedSlotWithAssignment } from "../hooks/use-media-assignments";
@@ -100,20 +100,18 @@ export function SeedSlotCard({
         {(noWorkflow || !hasAssignment) && (
           <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1">
             {!hasAssignment && !noWorkflow && (
-              <span
-                className="flex items-center justify-center size-5 rounded-full bg-orange-500/80"
-                title="Seed image not assigned"
-              >
-                <AlertTriangle size={11} className="text-white" />
-              </span>
+              <Tooltip content="Seed image not assigned">
+                <span className="flex items-center justify-center size-5 rounded-full bg-orange-500/80">
+                  <AlertTriangle size={11} className="text-white" />
+                </span>
+              </Tooltip>
             )}
             {noWorkflow && (
-              <span
-                className="flex items-center justify-center size-5 rounded-full bg-red-500/80"
-                title="No workflow assigned"
-              >
-                <AlertTriangle size={11} className="text-white" />
-              </span>
+              <Tooltip content="No workflow assigned">
+                <span className="flex items-center justify-center size-5 rounded-full bg-red-500/80">
+                  <AlertTriangle size={11} className="text-white" />
+                </span>
+              </Tooltip>
             )}
           </div>
         )}
@@ -219,20 +217,18 @@ export function ImageSlotCard({
         {(noWorkflow || (!sourceVariant && !noWorkflow)) && (
           <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1">
             {!sourceVariant && !noWorkflow && (
-              <span
-                className="flex items-center justify-center size-5 rounded-full bg-orange-500/80"
-                title="Source seed image missing"
-              >
-                <AlertTriangle size={11} className="text-white" />
-              </span>
+              <Tooltip content="Source seed image missing">
+                <span className="flex items-center justify-center size-5 rounded-full bg-orange-500/80">
+                  <AlertTriangle size={11} className="text-white" />
+                </span>
+              </Tooltip>
             )}
             {noWorkflow && (
-              <span
-                className="flex items-center justify-center size-5 rounded-full bg-red-500/80"
-                title="No workflow assigned"
-              >
-                <AlertTriangle size={11} className="text-white" />
-              </span>
+              <Tooltip content="No workflow assigned">
+                <span className="flex items-center justify-center size-5 rounded-full bg-red-500/80">
+                  <AlertTriangle size={11} className="text-white" />
+                </span>
+              </Tooltip>
             )}
           </div>
         )}
@@ -321,28 +317,28 @@ function PickerOverlay({
           {available.map((v) => {
             const isSelected = v.id === selectedId;
             return (
-              <button
-                type="button"
-                key={v.id}
-                onClick={() => {
-                  if (isSelected && onClear) onClear();
-                  else onSelectVariant(v.id);
-                }}
-                title={`${v.variant_label}${v.is_hero ? " (hero)" : ""}`}
-                className={cn(
-                  "relative shrink-0 rounded-[var(--radius-md)] overflow-hidden transition-all duration-150 cursor-pointer",
-                  "w-[80%] aspect-square border-2",
-                  isSelected
-                    ? "border-green-500 ring-1 ring-green-500/40"
-                    : "border-transparent hover:border-[var(--color-border-primary)]",
-                )}
-              >
-                <img
-                  src={variantThumbnailUrl(v.id, 256)}
-                  alt={v.variant_label}
-                  className="h-full w-full object-cover"
-                />
-              </button>
+              <Tooltip key={v.id} content={`${v.variant_label}${v.is_hero ? " (hero)" : ""}`}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isSelected && onClear) onClear();
+                    else onSelectVariant(v.id);
+                  }}
+                  className={cn(
+                    "relative shrink-0 rounded-[var(--radius-md)] overflow-hidden transition-all duration-150 cursor-pointer",
+                    "w-[80%] aspect-square border-2",
+                    isSelected
+                      ? "border-green-500 ring-1 ring-green-500/40"
+                      : "border-transparent hover:border-[var(--color-border-primary)]",
+                  )}
+                >
+                  <img
+                    src={variantThumbnailUrl(v.id, 256)}
+                    alt={v.variant_label}
+                    className="h-full w-full object-cover"
+                  />
+                </button>
+              </Tooltip>
             );
           })}
         </div>

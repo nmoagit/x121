@@ -7,7 +7,7 @@
  */
 
 import { cn } from "@/lib/cn";
-import { ContextLoader } from "@/components/primitives";
+import { ContextLoader, Tooltip } from "@/components/primitives";
 import { X } from "@/tokens/icons";
 import { variantThumbnailUrl } from "@/features/media/utils";
 import { useMediaVariants } from "@/features/media/hooks/use-media-variants";
@@ -94,46 +94,46 @@ export function MediaVariantPicker({
         const isSuggested = idx === 0 && selectedVariantId == null;
 
         return (
-          <button
-            type="button"
-            key={v.id}
-            onClick={() => {
-              if (isSelected && onClear) {
-                onClear();
-              } else {
-                onSelect(v.id);
-              }
-            }}
-            title={`${v.variant_label}${v.is_hero ? " (hero)" : ""}`}
-            className={cn(
-              "relative shrink-0 rounded-[var(--radius-md)] overflow-hidden",
-              "transition-all duration-150 cursor-pointer",
-              "h-10 w-10 border-2",
-              isSelected
-                ? "border-green-500 ring-1 ring-green-500/40"
-                : isSuggested
-                  ? "border-blue-500/50 ring-1 ring-blue-500/20"
-                  : "border-transparent hover:border-[var(--color-border-primary)]",
-            )}
-          >
-            <img
-              src={variantThumbnailUrl(v.id, THUMB_SIZE)}
-              alt={v.variant_label}
-              className="h-full w-full object-cover"
-            />
+          <Tooltip key={v.id} content={`${v.variant_label}${v.is_hero ? " (hero)" : ""}`}>
+            <button
+              type="button"
+              onClick={() => {
+                if (isSelected && onClear) {
+                  onClear();
+                } else {
+                  onSelect(v.id);
+                }
+              }}
+              className={cn(
+                "relative shrink-0 rounded-[var(--radius-md)] overflow-hidden",
+                "transition-all duration-150 cursor-pointer",
+                "h-10 w-10 border-2",
+                isSelected
+                  ? "border-green-500 ring-1 ring-green-500/40"
+                  : isSuggested
+                    ? "border-blue-500/50 ring-1 ring-blue-500/20"
+                    : "border-transparent hover:border-[var(--color-border-primary)]",
+              )}
+            >
+              <img
+                src={variantThumbnailUrl(v.id, THUMB_SIZE)}
+                alt={v.variant_label}
+                className="h-full w-full object-cover"
+              />
 
-            {/* Hero indicator */}
-            {v.is_hero && (
-              <span className="absolute top-0 right-0 h-2 w-2 rounded-bl bg-yellow-400" />
-            )}
+              {/* Hero indicator */}
+              {v.is_hero && (
+                <span className="absolute top-0 right-0 h-2 w-2 rounded-bl bg-yellow-400" />
+              )}
 
-            {/* Selected clear overlay */}
-            {isSelected && onClear && (
-              <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity">
-                <X size={14} className="text-white" />
-              </span>
-            )}
-          </button>
+              {/* Selected clear overlay */}
+              {isSelected && onClear && (
+                <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity">
+                  <X size={14} className="text-white" />
+                </span>
+              )}
+            </button>
+          </Tooltip>
         );
       })}
     </div>

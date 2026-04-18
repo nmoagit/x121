@@ -8,6 +8,7 @@
 import { useState } from "react";
 
 import { Badge } from "@/components/primitives/Badge";
+import { Tooltip } from "@/components/primitives";
 
 import { useFailureHeatmap } from "./hooks/use-failure-analytics";
 import type { HeatmapCell } from "./types";
@@ -115,23 +116,24 @@ export function FailureHeatmap({ onCellClick }: FailureHeatmapProps) {
                     return (
                       <td key={col} className="p-1">
                         {cell ? (
-                          <button
-                            type="button"
-                            className={`w-full rounded p-2 text-center text-xs transition-colors ${severityCellClass(cell.severity)}`}
-                            onClick={() => onCellClick?.(cell)}
-                            data-testid={`heatmap-cell-${row}-${col}`}
-                            title={`${(cell.failure_rate * 100).toFixed(0)}% failure rate (${cell.sample_count} samples)`}
-                          >
-                            <span className="font-mono">
-                              {(cell.failure_rate * 100).toFixed(0)}%
-                            </span>
-                            <Badge
-                              variant={severityBadgeVariant(cell.severity)}
-                              size="sm"
+                          <Tooltip content={`${(cell.failure_rate * 100).toFixed(0)}% failure rate (${cell.sample_count} samples)`}>
+                            <button
+                              type="button"
+                              className={`w-full rounded p-2 text-center text-xs transition-colors ${severityCellClass(cell.severity)}`}
+                              onClick={() => onCellClick?.(cell)}
+                              data-testid={`heatmap-cell-${row}-${col}`}
                             >
-                              {cell.severity}
-                            </Badge>
-                          </button>
+                              <span className="font-mono">
+                                {(cell.failure_rate * 100).toFixed(0)}%
+                              </span>
+                              <Badge
+                                variant={severityBadgeVariant(cell.severity)}
+                                size="sm"
+                              >
+                                {cell.severity}
+                              </Badge>
+                            </button>
+                          </Tooltip>
                         ) : (
                           <div className="p-2 text-center text-xs text-[var(--color-text-muted)]">
                             --

@@ -2,7 +2,7 @@
  * Value display and inline edit form for a platform setting (PRD-110).
  */
 
-import { Button, Input } from "@/components/primitives";
+import { Button, Input, Tooltip } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { Check, Eye, EyeOff, X } from "@/tokens/icons";
 
@@ -29,22 +29,23 @@ export function ValueDisplay({
 
   return (
     <div className="flex items-center gap-[var(--spacing-2)]">
-      <button
-        type="button"
-        onClick={onEdit}
-        className={cn(
-          "flex-1 truncate text-left text-sm font-mono",
-          "text-[var(--color-text-secondary)]",
-          "rounded-[var(--radius-sm)] px-2 py-1",
-          "hover:bg-[var(--color-surface-tertiary)]",
-          "transition-colors duration-[var(--duration-fast)]",
-        )}
-        title="Click to edit"
-      >
-        {value || (
-          <span className="italic text-[var(--color-text-muted)]">(empty)</span>
-        )}
-      </button>
+      <Tooltip content="Click to edit">
+        <button
+          type="button"
+          onClick={onEdit}
+          className={cn(
+            "flex-1 truncate text-left text-sm font-mono",
+            "text-[var(--color-text-secondary)]",
+            "rounded-[var(--radius-sm)] px-2 py-1",
+            "hover:bg-[var(--color-surface-tertiary)]",
+            "transition-colors duration-[var(--duration-fast)]",
+          )}
+        >
+          {value || (
+            <span className="italic text-[var(--color-text-muted)]">(empty)</span>
+          )}
+        </button>
+      </Tooltip>
       {sensitive && (
         <button
           type="button"

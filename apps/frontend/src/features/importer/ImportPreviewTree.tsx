@@ -5,7 +5,7 @@
 
 import { useCallback, useState } from "react";
 
-import { Badge, Checkbox } from "@/components/primitives";
+import { Badge, Checkbox, Tooltip } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import type { ImportMappingEntry, FolderImportPreview } from "./types";
 import { ACTION_LABELS, ACTION_VARIANTS, entityTypeLabel } from "./types";
@@ -118,12 +118,11 @@ function ImportEntryRow({ entry, isSelected, onToggle }: ImportEntryRowProps) {
         )}
       </Stack>
 
-      <span
-        className={`shrink-0 ${TYPO_CAPTION}`}
-        title={entry.source_path}
-      >
-        {entry.file_name}
-      </span>
+      <Tooltip content={entry.source_path}>
+        <span className={`shrink-0 ${TYPO_CAPTION}`}>
+          {entry.file_name}
+        </span>
+      </Tooltip>
 
       {entry.validation_errors.length > 0 && (
         <span className="text-xs text-[var(--color-text-danger)]">

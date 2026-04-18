@@ -12,7 +12,7 @@ import { useCallback, useMemo, useState } from "react";
 import { Modal } from "@/components/composite/Modal";
 import { Grid, Stack } from "@/components/layout";
 import { ApprovalActions } from "@/components/domain/ApprovalActions";
-import { Button ,  ContextLoader } from "@/components/primitives";
+import { Button, Tooltip,  ContextLoader } from "@/components/primitives";
 import { ChevronLeft, ChevronRight, Trash2, Upload, Wand2 } from "@/tokens/icons";
 
 import {
@@ -61,22 +61,23 @@ function ModalVariantCard({ variant, onApprove, onUnapprove, onReject, onExport,
     <div className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] overflow-hidden">
       {/* Thumbnail — click to annotate */}
       {variant.file_path ? (
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => onAnnotate(variant)}
-          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onAnnotate(variant); }}
-          className="cursor-pointer"
-          title="Click to annotate"
-        >
-          <ProgressiveImage
-            lowSrc={variantThumbnailUrl(variant.id, 128)}
-            highSrc={variantThumbnailUrl(variant.id, 512)}
-            alt={variant.variant_label}
-            className="w-full aspect-video object-cover"
-            loading="lazy"
-          />
-        </div>
+        <Tooltip content="Click to annotate">
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => onAnnotate(variant)}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onAnnotate(variant); }}
+            className="cursor-pointer w-full"
+          >
+            <ProgressiveImage
+              lowSrc={variantThumbnailUrl(variant.id, 128)}
+              highSrc={variantThumbnailUrl(variant.id, 512)}
+              alt={variant.variant_label}
+              className="w-full aspect-video object-cover"
+              loading="lazy"
+            />
+          </div>
+        </Tooltip>
       ) : (
         <div className="flex aspect-video items-center justify-center text-xs text-[var(--color-text-muted)] font-mono bg-[var(--color-surface-secondary)]">
           No image

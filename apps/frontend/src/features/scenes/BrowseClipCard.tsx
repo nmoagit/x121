@@ -5,7 +5,7 @@
 
 import { useRef, useState, useEffect } from "react";
 
-import { Checkbox, ContextLoader } from "@/components/primitives";
+import { Checkbox, ContextLoader, Tooltip } from "@/components/primitives";
 import type { ClipBrowseItem } from "@/features/scenes/hooks/useClipManagement";
 import { isPurgedClip } from "@/features/scenes/types";
 import { getStreamUrl } from "@/features/video-player";
@@ -137,12 +137,16 @@ export function BrowseClipCard({
           </div>
         </button>
         <div className="flex flex-col gap-0.5 shrink-0">
-          <button type="button" onClick={onApprove} className={`p-0.5 rounded transition-colors ${clip.qa_status === "approved" ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-green)]"}`} title="Approve">
-            <CheckCircle size={14} />
-          </button>
-          <button type="button" onClick={onReject} className={`p-0.5 rounded transition-colors ${clip.qa_status === "rejected" ? "text-[var(--color-data-red)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-red)]"}`} title="Reject">
-            <XCircle size={14} />
-          </button>
+          <Tooltip content="Approve">
+            <button type="button" onClick={onApprove} className={`p-0.5 rounded transition-colors ${clip.qa_status === "approved" ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-green)]"}`}>
+              <CheckCircle size={14} />
+            </button>
+          </Tooltip>
+          <Tooltip content="Reject">
+            <button type="button" onClick={onReject} className={`p-0.5 rounded transition-colors ${clip.qa_status === "rejected" ? "text-[var(--color-data-red)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-red)]"}`}>
+              <XCircle size={14} />
+            </button>
+          </Tooltip>
         </div>
       </div>
     </div>

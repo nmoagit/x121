@@ -1,3 +1,4 @@
+import { Tooltip } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { frameToTimecode, formatDuration, padFrame } from "../frame-utils";
 
@@ -30,15 +31,19 @@ export function FrameCounter({
         className,
       )}
     >
-      <span title="Timecode (HH:MM:SS:FF)">{timecode}</span>
+      <Tooltip content="Timecode (HH:MM:SS:FF)"><span>{timecode}</span></Tooltip>
       <span className="text-[var(--color-text-muted)]">|</span>
-      <span title="Current frame / Total frames">
-        {padFrame(currentFrame)} / {padFrame(totalFrames)}
-      </span>
+      <Tooltip content="Current frame / Total frames">
+        <span>
+          {padFrame(currentFrame)} / {padFrame(totalFrames)}
+        </span>
+      </Tooltip>
       <span className="text-[var(--color-text-muted)]">|</span>
-      <span title="Elapsed / Duration">
-        {currentDisplay} / {durationDisplay}
-      </span>
+      <Tooltip content="Elapsed / Duration">
+        <span>
+          {currentDisplay} / {durationDisplay}
+        </span>
+      </Tooltip>
     </div>
   );
 }

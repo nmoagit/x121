@@ -44,7 +44,6 @@ function AvatarNameWithThumb({ name, heroVariantId }: { name: string; heroVarian
   return (
     <Tooltip
       side="bottom"
-      delay={150}
       content={
         <img
           src={variantThumbnailUrl(heroVariantId, 256)}
@@ -192,7 +191,9 @@ function ReadinessTab({ rows, projectId, resolveBlockingDeliverables }: Readines
           <tr className={TERMINAL_DIVIDER}>
             <th className={`${TERMINAL_TH} px-3 py-2`}>Model</th>
             <th className={`${TERMINAL_TH} px-3 py-2`}>Images</th>
-            <th className={`${TERMINAL_TH} px-3 py-2`} title="Approved / With Video / Total">Scenes</th>
+            <th className={`${TERMINAL_TH} px-3 py-2`}>
+              <Tooltip content="Approved / With Video / Total"><span>Scenes</span></Tooltip>
+            </th>
             <th className={`${TERMINAL_TH} px-3 py-2`}>Metadata</th>
             <th className={`${TERMINAL_TH} px-3 py-2`}>Blocking</th>
             <th className={`${TERMINAL_TH} px-3 py-2 text-right`}>Readiness</th>
@@ -315,16 +316,17 @@ function StatusDot({
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
-      title={tooltip}
-      onClick={onClick}
-      className={cn(
-        "w-3 h-3 rounded-full transition-transform hover:scale-150 cursor-pointer",
-        DOT_COLORS[status],
-      )}
-      aria-label={tooltip}
-    />
+    <Tooltip content={tooltip} side="top">
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          "w-3 h-3 rounded-full transition-transform hover:scale-150 cursor-pointer",
+          DOT_COLORS[status],
+        )}
+        aria-label={tooltip}
+      />
+    </Tooltip>
   );
 }
 
@@ -516,19 +518,25 @@ function MatrixTab({ rows, projectId }: MatrixTabProps) {
                   className={`${TERMINAL_TH} px-0.5 py-1.5 text-center`}
                 >
                   {col.kind === "image" ? (
-                    <div title={`Image: ${col.label}`}>
-                      <div className="truncate">Image</div>
-                      <div className="truncate text-[9px] font-normal opacity-60">{col.label}</div>
-                    </div>
+                    <Tooltip content={`Image: ${col.label}`}>
+                      <div>
+                        <div className="truncate">Image</div>
+                        <div className="truncate text-[9px] font-normal opacity-60">{col.label}</div>
+                      </div>
+                    </Tooltip>
                   ) : col.kind === "scene" ? (
-                    <div title={col.label}>
-                      <div className="truncate">{col.sceneName}</div>
-                      {col.trackLabel && (
-                        <div className="truncate text-[9px] font-normal opacity-60">{col.trackLabel}</div>
-                      )}
-                    </div>
+                    <Tooltip content={col.label}>
+                      <div>
+                        <div className="truncate">{col.sceneName}</div>
+                        {col.trackLabel && (
+                          <div className="truncate text-[9px] font-normal opacity-60">{col.trackLabel}</div>
+                        )}
+                      </div>
+                    </Tooltip>
                   ) : (
-                    <div className="truncate" title={col.label}>{col.label}</div>
+                    <Tooltip content={col.label}>
+                      <div className="truncate">{col.label}</div>
+                    </Tooltip>
                   )}
                 </th>
               );

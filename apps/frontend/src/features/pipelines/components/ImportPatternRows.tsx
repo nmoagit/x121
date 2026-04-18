@@ -2,7 +2,7 @@
  * Editable pattern row components for the import rules editor (PRD-141).
  */
 
-import { Input } from "@/components/primitives";
+import { Input, Tooltip } from "@/components/primitives";
 import { ICON_ACTION_BTN_DANGER } from "@/lib/ui-classes";
 import { cn } from "@/lib/cn";
 import { Trash2 } from "@/tokens/icons";
@@ -44,14 +44,15 @@ export function SeedPatternRow({ pattern, onChange, onRemove }: SeedPatternRowPr
         placeholder="png, jpg, webp"
         className="w-36"
       />
-      <button
-        type="button"
-        onClick={onRemove}
-        className={cn("mt-6", ICON_ACTION_BTN_DANGER)}
-        title="Remove pattern"
-      >
-        <Trash2 size={14} />
-      </button>
+      <Tooltip content="Remove pattern">
+        <button
+          type="button"
+          onClick={onRemove}
+          className={cn("mt-6", ICON_ACTION_BTN_DANGER)}
+        >
+          <Trash2 size={14} />
+        </button>
+      </Tooltip>
     </div>
   );
 }
@@ -84,14 +85,15 @@ export function VideoPatternRow({ pattern, onChange, onRemove }: VideoPatternRow
         placeholder="mp4, webm, mov"
         className="w-36"
       />
-      <button
-        type="button"
-        onClick={onRemove}
-        className={cn("mt-6", ICON_ACTION_BTN_DANGER)}
-        title="Remove pattern"
-      >
-        <Trash2 size={14} />
-      </button>
+      <Tooltip content="Remove pattern">
+        <button
+          type="button"
+          onClick={onRemove}
+          className={cn("mt-6", ICON_ACTION_BTN_DANGER)}
+        >
+          <Trash2 size={14} />
+        </button>
+      </Tooltip>
     </div>
   );
 }
@@ -124,14 +126,15 @@ export function MetadataPatternRow({ pattern, onChange, onRemove }: MetadataPatt
           placeholder="e.g. .*bio\\.json$"
         />
       </div>
-      <button
-        type="button"
-        onClick={onRemove}
-        className={cn("mt-6", ICON_ACTION_BTN_DANGER)}
-        title="Remove pattern"
-      >
-        <Trash2 size={14} />
-      </button>
+      <Tooltip content="Remove pattern">
+        <button
+          type="button"
+          onClick={onRemove}
+          className={cn("mt-6", ICON_ACTION_BTN_DANGER)}
+        >
+          <Trash2 size={14} />
+        </button>
+      </Tooltip>
     </div>
   );
 }

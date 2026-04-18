@@ -6,7 +6,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-import { Button } from "@/components/primitives";
+import { Button, Tooltip } from "@/components/primitives";
 import { ICON_ACTION_BTN, ICON_ACTION_BTN_DANGER, TEXTAREA_BASE } from "@/lib/ui-classes";
 import { Check, Edit3, GripVertical, Trash2, XCircle } from "@/tokens/icons";
 
@@ -119,26 +119,28 @@ export function SpeechEntryRow({
           <div className="flex items-center gap-[var(--spacing-1)] shrink-0">
             {/* Approval buttons */}
             {isApprovable(speech.status_id) && (
-              <button
-                type="button"
-                onClick={onApprove}
-                className={ICON_ACTION_BTN}
-                aria-label="Approve"
-                title="Approve"
-              >
-                <Check size={14} />
-              </button>
+              <Tooltip content="Approve">
+                <button
+                  type="button"
+                  onClick={onApprove}
+                  className={ICON_ACTION_BTN}
+                  aria-label="Approve"
+                >
+                  <Check size={14} />
+                </button>
+              </Tooltip>
             )}
             {isRejectable(speech.status_id) && (
-              <button
-                type="button"
-                onClick={onReject}
-                className={ICON_ACTION_BTN_DANGER}
-                aria-label="Reject"
-                title="Reject"
-              >
-                <XCircle size={14} />
-              </button>
+              <Tooltip content="Reject">
+                <button
+                  type="button"
+                  onClick={onReject}
+                  className={ICON_ACTION_BTN_DANGER}
+                  aria-label="Reject"
+                >
+                  <XCircle size={14} />
+                </button>
+              </Tooltip>
             )}
 
             {/* Edit & delete */}

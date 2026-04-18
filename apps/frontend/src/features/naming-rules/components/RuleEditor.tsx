@@ -1,5 +1,6 @@
 /**
- * Inline rule editor with template input, token chips, and live preview (PRD-116).
+ * Rule editor with template input, token chips, and live preview (PRD-116).
+ * Renders the form content only; embed inside a <Modal> for chrome.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -7,9 +8,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useToast } from "@/components/composite/useToast";
 import { Button } from "@/components/primitives";
 import { Stack } from "@/components/layout";
-import { TERMINAL_PANEL, TERMINAL_HEADER, TERMINAL_HEADER_TITLE, TERMINAL_BODY, TERMINAL_TEXTAREA, TERMINAL_LABEL } from "@/lib/ui-classes";
+import { TERMINAL_TEXTAREA, TERMINAL_LABEL } from "@/lib/ui-classes";
 import { cn } from "@/lib/cn";
-import { Check, Save, X } from "@/tokens/icons";
+import { Check, Save } from "@/tokens/icons";
 
 import {
   useCreateNamingRule,
@@ -111,73 +112,56 @@ export function RuleEditor({ category, rule, onClose }: RuleEditorProps) {
   }, [rule?.template]);
 
   return (
-    <div className={cn(TERMINAL_PANEL, "mt-[var(--spacing-2)]")}>
-      <div className={cn(TERMINAL_HEADER, "flex items-center justify-between")}>
-        <span className={TERMINAL_HEADER_TITLE}>
-          Edit Template: {category.name}
-        </span>
-        <Button variant="ghost" size="xs" onClick={onClose} aria-label="Close editor">
-          <X size={16} />
+    <Stack gap={4}>
+      {/* Template textarea */}
+      <div className="flex flex-col gap-1.5">
+        <span className={TERMINAL_LABEL}>Template pattern</span>
+        <textarea
+          ref={textareaRef}
+          id={`template-${category.id}`}
+          value={template}
+          onChange={(e) => setTemplate(e.target.value)}
+          rows={2}
+          className={cn(TERMINAL_TEXTAREA, "resize-none")}
+          placeholder="e.g. {project}_{scene}_{version}.mp4"
+        />
+      </div>
+
+      {/* Token chips */}
+      <TokenList categoryId={category.id} onTokenClick={handleTokenClick} />
+
+      {/* Live preview */}
+      <TemplatePreview preview={preview} isLoading={previewLoading} />
+
+      {/* Actions */}
+      <div className="flex items-center justify-end gap-2">
+        {isDirty && (
+          <Button variant="ghost" size="sm" onClick={handleReset}>
+            Reset
+          </Button>
+        )}
+        <Button variant="secondary" size="sm" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button
+          variant="primary"
+          size="sm"
+          icon={isSaving ? undefined : <Save size={16} />}
+          onClick={handleSave}
+          loading={isSaving}
+          disabled={!isDirty || !template.trim()}
+        >
+          {rule ? "Save" : "Create"}
         </Button>
       </div>
 
-      <div className={TERMINAL_BODY}>
-      <Stack gap={4}>
-        {/* Template textarea */}
-        <div className="flex flex-col gap-1.5">
-          <span
-            className={TERMINAL_LABEL}
-          >
-            Template pattern
-          </span>
-          <textarea
-            ref={textareaRef}
-            id={`template-${category.id}`}
-            value={template}
-            onChange={(e) => setTemplate(e.target.value)}
-            rows={2}
-            className={cn(TERMINAL_TEXTAREA, "resize-none")}
-            placeholder="e.g. {project}_{scene}_{version}.mp4"
-          />
+      {/* Save confirmation indicator */}
+      {(updateMutation.isSuccess || createMutation.isSuccess) && (
+        <div className={`${TYPO_DATA_SUCCESS} flex items-center gap-1.5`}>
+          <Check size={14} aria-hidden />
+          Saved
         </div>
-
-        {/* Token chips */}
-        <TokenList categoryId={category.id} onTokenClick={handleTokenClick} />
-
-        {/* Live preview */}
-        <TemplatePreview preview={preview} isLoading={previewLoading} />
-
-        {/* Actions */}
-        <div className="flex items-center justify-end gap-2">
-          {isDirty && (
-            <Button variant="ghost" size="sm" onClick={handleReset}>
-              Reset
-            </Button>
-          )}
-          <Button variant="secondary" size="sm" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            icon={isSaving ? undefined : <Save size={16} />}
-            onClick={handleSave}
-            loading={isSaving}
-            disabled={!isDirty || !template.trim()}
-          >
-            {rule ? "Save" : "Create"}
-          </Button>
-        </div>
-
-        {/* Save confirmation indicator */}
-        {(updateMutation.isSuccess || createMutation.isSuccess) && (
-          <div className={`${TYPO_DATA_SUCCESS} flex items-center gap-1.5`}>
-            <Check size={14} aria-hidden />
-            Saved
-          </div>
-        )}
-      </Stack>
-      </div>
-    </div>
+      )}
+    </Stack>
   );
 }

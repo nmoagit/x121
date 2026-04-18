@@ -1,4 +1,4 @@
-import { ContextLoader } from "@/components/primitives";
+import { ContextLoader, Tooltip } from "@/components/primitives";
 import { useCallback, useMemo, useState } from "react";
 
 import { EmptyState } from "@/components/domain/EmptyState";
@@ -114,7 +114,19 @@ export function ClipGallery({ sceneId, onGenerate, generateLoading, generateDisa
         <div className="flex-1" />
         <div className="flex items-center gap-[var(--spacing-2)]">
           {onGenerate && (
-            <span title={generateDisabled && generateDisabledReason ? generateDisabledReason : undefined}>
+            generateDisabled && generateDisabledReason ? (
+              <Tooltip content={generateDisabledReason}>
+                <Button
+                  size="xs"
+                  onClick={onGenerate}
+                  loading={generateLoading}
+                  disabled={generateDisabled}
+                  icon={<Play size={12} />}
+                >
+                  Generate New
+                </Button>
+              </Tooltip>
+            ) : (
               <Button
                 size="xs"
                 onClick={onGenerate}
@@ -124,7 +136,7 @@ export function ClipGallery({ sceneId, onGenerate, generateLoading, generateDisa
               >
                 Generate New
               </Button>
-            </span>
+            )
           )}
           <Button
             variant="secondary"

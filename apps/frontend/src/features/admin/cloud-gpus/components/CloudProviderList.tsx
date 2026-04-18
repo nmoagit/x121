@@ -2,6 +2,8 @@
  * Sidebar list of cloud GPU providers (PRD-114).
  */
 
+import { Tooltip } from "@/components/primitives";
+
 import { useInstances, useScalingRules } from "../hooks/use-cloud-providers";
 import type { CloudProvider } from "../hooks/use-cloud-providers";
 
@@ -64,11 +66,12 @@ function ProviderCard({
           : "border-[var(--color-border-default)] bg-[var(--color-surface-primary)] hover:bg-[var(--color-surface-secondary)]"
       }`}
     >
-      <span
-        className="inline-block h-2 w-2 shrink-0 rounded-full"
-        style={{ backgroundColor: status.color }}
-        title={status.label}
-      />
+      <Tooltip content={status.label}>
+        <span
+          className="inline-block h-2 w-2 shrink-0 rounded-full"
+          style={{ backgroundColor: status.color }}
+        />
+      </Tooltip>
       <div>
         <p className="text-sm font-medium text-[var(--color-text-primary)]">{provider.name}</p>
         <p className="text-xs text-[var(--color-text-muted)]">

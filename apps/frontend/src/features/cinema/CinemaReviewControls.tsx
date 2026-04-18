@@ -7,6 +7,7 @@
 
 import { useCallback, useState } from "react";
 
+import { Tooltip } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { Check, AlertTriangle, XCircle } from "@/tokens/icons";
 
@@ -180,22 +181,22 @@ export function CinemaReviewControls({
           const config = ACTION_CONFIG[key];
           const Icon = config.icon;
           return (
-            <button
-              key={key}
-              type="button"
-              onClick={handler}
-              className={cn(
-                "inline-flex items-center gap-[var(--spacing-1)]",
-                "px-[var(--spacing-2)] py-[var(--spacing-1)]",
-                "text-sm rounded-[var(--radius-md)]",
-                "transition-colors duration-[var(--duration-fast)]",
-                config.buttonClass,
-              )}
-              title={`${config.label} (${config.shortcutKey.toUpperCase()})`}
-            >
-              <Icon size={16} />
-              <span>{config.label}</span>
-            </button>
+            <Tooltip key={key} content={`${config.label} (${config.shortcutKey.toUpperCase()})`}>
+              <button
+                type="button"
+                onClick={handler}
+                className={cn(
+                  "inline-flex items-center gap-[var(--spacing-1)]",
+                  "px-[var(--spacing-2)] py-[var(--spacing-1)]",
+                  "text-sm rounded-[var(--radius-md)]",
+                  "transition-colors duration-[var(--duration-fast)]",
+                  config.buttonClass,
+                )}
+              >
+                <Icon size={16} />
+                <span>{config.label}</span>
+              </button>
+            </Tooltip>
           );
         })}
       </div>

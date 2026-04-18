@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/primitives/Button";
+import { Tooltip } from "@/components/primitives";
 import { ChevronDown, ChevronUp } from "@/tokens/icons";
 
 import { TextLabel } from "./TextLabel";
@@ -548,32 +549,33 @@ export function DrawingCanvas({
           <div className="flex items-center gap-1 px-2 py-1">
             {/* Tool buttons — icon-style, abbreviated */}
             {DRAWING_TOOLS.map((tool) => (
-              <button
-                key={tool}
-                type="button"
-                className={`px-1.5 py-0.5 rounded text-[10px] font-mono transition-colors ${
-                  activeTool === tool
-                    ? "bg-[var(--color-action-primary)] text-white"
-                    : "text-white/70 hover:text-white hover:bg-white/10"
-                }`}
-                onClick={() => setActiveTool(tool)}
-                title={toolLabel(tool)}
-                data-testid={`tool-${tool}`}
-              >
-                {toolLabel(tool).charAt(0)}
-              </button>
+              <Tooltip key={tool} content={toolLabel(tool)}>
+                <button
+                  type="button"
+                  className={`px-1.5 py-0.5 rounded text-[10px] font-mono transition-colors ${
+                    activeTool === tool
+                      ? "bg-[var(--color-action-primary)] text-white"
+                      : "text-white/70 hover:text-white hover:bg-white/10"
+                  }`}
+                  onClick={() => setActiveTool(tool)}
+                  data-testid={`tool-${tool}`}
+                >
+                  {toolLabel(tool).charAt(0)}
+                </button>
+              </Tooltip>
             ))}
 
             <div className="mx-0.5 h-4 w-px bg-white/20" />
 
             {/* Active color swatch */}
-            <button
-              type="button"
-              className="h-5 w-5 rounded-full border-2 border-white/50"
-              style={{ backgroundColor: color }}
-              onClick={() => setToolbarExpanded((v) => !v)}
-              title="Color / options"
-            />
+            <Tooltip content="Color / options">
+              <button
+                type="button"
+                className="h-5 w-5 rounded-full border-2 border-white/50"
+                style={{ backgroundColor: color }}
+                onClick={() => setToolbarExpanded((v) => !v)}
+              />
+            </Tooltip>
 
             <div className="mx-0.5 h-4 w-px bg-white/20" />
 
@@ -598,14 +600,15 @@ export function DrawingCanvas({
             </button>
 
             {/* Expand toggle */}
-            <button
-              type="button"
-              className="ml-auto p-0.5 text-white/70 hover:text-white transition-colors"
-              onClick={() => setToolbarExpanded((v) => !v)}
-              title={toolbarExpanded ? "Collapse" : "More options"}
-            >
-              {toolbarExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            </button>
+            <Tooltip content={toolbarExpanded ? "Collapse" : "More options"}>
+              <button
+                type="button"
+                className="ml-auto p-0.5 text-white/70 hover:text-white transition-colors"
+                onClick={() => setToolbarExpanded((v) => !v)}
+              >
+                {toolbarExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
+            </Tooltip>
           </div>
 
           {/* Expanded options — colors, stroke width */}

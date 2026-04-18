@@ -2,7 +2,7 @@
  * Energy consumption summary panel showing kWh stats and time breakdown (PRD-87).
  */
 
-import { StatBadge ,  ContextLoader } from "@/components/primitives";
+import { StatBadge, Tooltip,  ContextLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { formatPercent } from "@/lib/format";
 import { BarChart3, Zap } from "@/tokens/icons";
@@ -40,21 +40,24 @@ function TimeBreakdownBar({ active, idle, off }: TimeBarProps) {
 
   return (
     <div className="flex h-2 w-full overflow-hidden rounded-[var(--radius-full)]">
-      <div
-        className="bg-[var(--color-action-success)]"
-        style={{ width: `${pctActive}%` }}
-        title={`Active: ${active}m`}
-      />
-      <div
-        className="bg-[var(--color-action-warning)]"
-        style={{ width: `${pctIdle}%` }}
-        title={`Idle: ${idle}m`}
-      />
-      <div
-        className="bg-[var(--color-surface-tertiary)]"
-        style={{ width: `${pctOff}%` }}
-        title={`Off: ${off}m`}
-      />
+      <Tooltip content={`Active: ${active}m`}>
+        <div
+          className="bg-[var(--color-action-success)] h-full"
+          style={{ width: `${pctActive}%` }}
+        />
+      </Tooltip>
+      <Tooltip content={`Idle: ${idle}m`}>
+        <div
+          className="bg-[var(--color-action-warning)] h-full"
+          style={{ width: `${pctIdle}%` }}
+        />
+      </Tooltip>
+      <Tooltip content={`Off: ${off}m`}>
+        <div
+          className="bg-[var(--color-surface-tertiary)] h-full"
+          style={{ width: `${pctOff}%` }}
+        />
+      </Tooltip>
     </div>
   );
 }

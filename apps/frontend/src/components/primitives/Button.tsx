@@ -4,6 +4,8 @@ import { iconSizes } from "@/tokens/icons";
 import { forwardRef } from "react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
+import { Tooltip } from "./Tooltip";
+
 type ButtonVariant = "primary" | "secondary" | "danger" | "ghost";
 type ButtonSize = "xs" | "sm" | "md" | "lg";
 
@@ -57,17 +59,25 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     disabled,
     className,
     children,
+    title,
+    "aria-label": ariaLabel,
     ...rest
   },
   ref,
 ) {
   const isDisabled = disabled || loading;
+  // Icon-only buttons lose their accessible name when we drop the native `title`
+  // in favour of the custom Tooltip. Fall back to the tooltip text so screen
+  // readers still announce the button's purpose.
+  const hasChildren = children != null && children !== false && children !== "";
+  const effectiveAriaLabel = ariaLabel ?? (hasChildren ? undefined : title);
 
-  return (
+  const button = (
     <button
       ref={ref}
       type="button"
       disabled={isDisabled}
+      aria-label={effectiveAriaLabel}
       className={cn(
         "inline-flex items-center justify-center font-medium",
         "rounded-[var(--radius-md)]",
@@ -90,4 +100,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       {children}
     </button>
   );
+
+  if (title) {
+    return <Tooltip content={title}>{button}</Tooltip>;
+  }
+  return button;
 });

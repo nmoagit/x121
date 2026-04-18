@@ -923,12 +923,22 @@ export function AvatarMetadataTab({ avatarId, projectId }: AvatarMetadataTabProp
                   <span className="text-[var(--color-text-muted)]">{v.source}</span>
                   {v.is_active && <span className="text-[var(--color-data-green)]">active</span>}
                   {v.rejection_reason && (
-                    <span className="text-[var(--color-data-red)]" title={v.rejection_reason}>rejected</span>
+                    <Tooltip content={v.rejection_reason}>
+                      <span className="text-[var(--color-data-red)]">rejected</span>
+                    </Tooltip>
                   )}
                   {v.is_active && (
-                    <span className={v.approval_status === "approved" ? "text-[var(--color-data-green)]" : v.approval_status === "rejected" ? "text-[var(--color-data-red)]" : "text-[var(--color-text-muted)]"} title={v.approval_comment ?? undefined}>
-                      {METADATA_APPROVAL_LABEL[v.approval_status].toLowerCase()}
-                    </span>
+                    v.approval_comment ? (
+                      <Tooltip content={v.approval_comment}>
+                        <span className={v.approval_status === "approved" ? "text-[var(--color-data-green)]" : v.approval_status === "rejected" ? "text-[var(--color-data-red)]" : "text-[var(--color-text-muted)]"}>
+                          {METADATA_APPROVAL_LABEL[v.approval_status].toLowerCase()}
+                        </span>
+                      </Tooltip>
+                    ) : (
+                      <span className={v.approval_status === "approved" ? "text-[var(--color-data-green)]" : v.approval_status === "rejected" ? "text-[var(--color-data-red)]" : "text-[var(--color-text-muted)]"}>
+                        {METADATA_APPROVAL_LABEL[v.approval_status].toLowerCase()}
+                      </span>
+                    )
                   )}
                   <span className="text-[var(--color-text-muted)] opacity-60">{formatDate(v.created_at)}</span>
                 </div>

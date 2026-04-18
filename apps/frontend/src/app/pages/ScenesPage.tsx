@@ -25,6 +25,7 @@ import {
   Pagination,
   SearchInput,
   Toggle,
+  Tooltip,
 } from "@/components/primitives";
 import type { FilterConfig, FilterOption } from "@/components/primitives";
 import { usePipelineContextSafe } from "@/features/pipelines";
@@ -260,22 +261,24 @@ function BrowseClipItem({
 
         {/* Approve / Reject */}
         <div className="flex items-center gap-1 shrink-0">
-          <button
-            type="button"
-            onClick={onApprove}
-            className={`p-1 rounded transition-colors ${clip.qa_status === "approved" ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-green)]"}`}
-            title={clip.qa_status === "approved" ? "Approved" : "Approve"}
-          >
-            <CheckCircle size={16} />
-          </button>
-          <button
-            type="button"
-            onClick={onReject}
-            className={`p-1 rounded transition-colors ${clip.qa_status === "rejected" ? "text-[var(--color-data-red)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-red)]"}`}
-            title={clip.qa_status === "rejected" ? "Rejected" : "Reject"}
-          >
-            <XCircle size={16} />
-          </button>
+          <Tooltip content={clip.qa_status === "approved" ? "Approved" : "Approve"}>
+            <button
+              type="button"
+              onClick={onApprove}
+              className={`p-1 rounded transition-colors ${clip.qa_status === "approved" ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-green)]"}`}
+            >
+              <CheckCircle size={16} />
+            </button>
+          </Tooltip>
+          <Tooltip content={clip.qa_status === "rejected" ? "Rejected" : "Reject"}>
+            <button
+              type="button"
+              onClick={onReject}
+              className={`p-1 rounded transition-colors ${clip.qa_status === "rejected" ? "text-[var(--color-data-red)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-red)]"}`}
+            >
+              <XCircle size={16} />
+            </button>
+          </Tooltip>
         </div>
       </div>
     </div>

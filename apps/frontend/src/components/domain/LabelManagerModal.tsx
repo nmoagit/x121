@@ -10,7 +10,7 @@ import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
 
 import { Modal } from "@/components/composite";
-import { Button, Input } from "@/components/primitives";
+import { Button, Input, Tooltip } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { Edit3, Trash2, X } from "@/tokens/icons";
 import { TYPO_DATA } from "@/lib/typography-tokens";
@@ -108,13 +108,14 @@ export function LabelManagerModal({ open, onClose, pipelineId }: LabelManagerMod
                 {editingId === label.id ? (
                   /* Edit mode */
                   <>
-                    <input
-                      type="color"
-                      value={editColor || "#6b7280"}
-                      onChange={(e) => setEditColor(e.target.value)}
-                      className="w-5 h-5 rounded cursor-pointer border-none bg-transparent"
-                      title="Label color"
-                    />
+                    <Tooltip content="Label color">
+                      <input
+                        type="color"
+                        value={editColor || "#6b7280"}
+                        onChange={(e) => setEditColor(e.target.value)}
+                        className="w-5 h-5 rounded cursor-pointer border-none bg-transparent"
+                      />
+                    </Tooltip>
                     <Input
                       size="sm"
                       value={editName}
@@ -146,22 +147,24 @@ export function LabelManagerModal({ open, onClose, pipelineId }: LabelManagerMod
                     <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
                       {label.usage_count} use{label.usage_count !== 1 ? "s" : ""}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => startEdit(label)}
-                      className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors"
-                      title="Edit"
-                    >
-                      <Edit3 size={12} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => deleteLabel(label.id)}
-                      className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-data-red)] hover:bg-[var(--color-surface-secondary)] transition-colors"
-                      title="Delete"
-                    >
-                      <Trash2 size={12} />
-                    </button>
+                    <Tooltip content="Edit">
+                      <button
+                        type="button"
+                        onClick={() => startEdit(label)}
+                        className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors"
+                      >
+                        <Edit3 size={12} />
+                      </button>
+                    </Tooltip>
+                    <Tooltip content="Delete">
+                      <button
+                        type="button"
+                        onClick={() => deleteLabel(label.id)}
+                        className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-data-red)] hover:bg-[var(--color-surface-secondary)] transition-colors"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </Tooltip>
                   </>
                 )}
               </div>

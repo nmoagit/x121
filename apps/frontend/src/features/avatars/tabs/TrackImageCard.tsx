@@ -8,8 +8,7 @@
 import { useCallback, useRef, useState } from "react";
 
 import { cn } from "@/lib/cn";
-import { Button } from "@/components/primitives";
-import { Tooltip } from "@/components/primitives/Tooltip";
+import { Button, Tooltip } from "@/components/primitives";
 import { AlertCircle, AlertTriangle, Image as ImageIcon, Upload, Wand2 } from "@/tokens/icons";
 
 import { MediaPlaceholder } from "./MediaPlaceholder";
@@ -150,20 +149,18 @@ export function TrackImageCard({
           {canGenerate && !generateEnabled && (
             <div className="absolute bottom-[var(--spacing-1)] right-[var(--spacing-1)] flex items-center gap-1">
               {generateDisabledReason?.includes("seed") && (
-                <span
-                  className="flex items-center justify-center size-5 rounded-full bg-orange-500/80"
-                  title={generateDisabledReason}
-                >
-                  <AlertTriangle size={11} className="text-white" />
-                </span>
+                <Tooltip content={generateDisabledReason}>
+                  <span className="flex items-center justify-center size-5 rounded-full bg-orange-500/80">
+                    <AlertTriangle size={11} className="text-white" />
+                  </span>
+                </Tooltip>
               )}
               {generateDisabledReason?.includes("workflow") && (
-                <span
-                  className="flex items-center justify-center size-5 rounded-full bg-red-500/80"
-                  title={generateDisabledReason}
-                >
-                  <AlertCircle size={11} className="text-white" />
-                </span>
+                <Tooltip content={generateDisabledReason}>
+                  <span className="flex items-center justify-center size-5 rounded-full bg-red-500/80">
+                    <AlertCircle size={11} className="text-white" />
+                  </span>
+                </Tooltip>
               )}
             </div>
           )}

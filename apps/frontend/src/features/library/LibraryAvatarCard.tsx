@@ -4,7 +4,7 @@
  * Both variants are clickable and trigger onSelect to open the preview modal.
  */
 
-import { ProgressiveImage } from "@/components/primitives";
+import { ProgressiveImage, Tooltip } from "@/components/primitives";
 import { variantThumbnailUrl } from "@/features/media/utils";
 import { cn } from "@/lib/cn";
 import { TERMINAL_PANEL, TERMINAL_ROW_HOVER } from "@/lib/ui-classes";
@@ -145,33 +145,40 @@ export function LibraryAvatarRow({
 
       {/* Stats */}
       <div className="flex items-center gap-3 shrink-0 font-mono text-[10px]">
-        <span title="Images" className="flex items-center gap-0.5 text-[var(--color-text-muted)]">
-          <Image size={10} aria-hidden />
-          {avatar.image_count}
-        </span>
+        <Tooltip content="Images">
+          <span className="flex items-center gap-0.5 text-[var(--color-text-muted)]">
+            <Image size={10} aria-hidden />
+            {avatar.image_count}
+          </span>
+        </Tooltip>
         <span className="opacity-30">|</span>
-        <span title="Scenes" className="flex items-center gap-0.5 text-[var(--color-text-muted)]">
-          <Film size={10} aria-hidden />
-          {avatar.scene_count}
-        </span>
+        <Tooltip content="Scenes">
+          <span className="flex items-center gap-0.5 text-[var(--color-text-muted)]">
+            <Film size={10} aria-hidden />
+            {avatar.scene_count}
+          </span>
+        </Tooltip>
         <span className="opacity-30">|</span>
-        <span title="Clips" className="flex items-center gap-0.5 text-[var(--color-text-muted)]">
-          <Video size={10} aria-hidden />
-          {avatar.clip_count}
-        </span>
+        <Tooltip content="Clips">
+          <span className="flex items-center gap-0.5 text-[var(--color-text-muted)]">
+            <Video size={10} aria-hidden />
+            {avatar.clip_count}
+          </span>
+        </Tooltip>
         <span className="opacity-30">|</span>
-        <span
-          title={avatar.has_metadata ? "Metadata present" : "No metadata"}
-          className={cn(
-            "flex items-center gap-0.5",
-            avatar.has_metadata
-              ? "text-[var(--color-data-green)]"
-              : "text-[var(--color-text-muted)]",
-          )}
-        >
-          {avatar.has_metadata ? <Check size={10} /> : <Minus size={10} />}
-          Meta
-        </span>
+        <Tooltip content={avatar.has_metadata ? "Metadata present" : "No metadata"}>
+          <span
+            className={cn(
+              "flex items-center gap-0.5",
+              avatar.has_metadata
+                ? "text-[var(--color-data-green)]"
+                : "text-[var(--color-text-muted)]",
+            )}
+          >
+            {avatar.has_metadata ? <Check size={10} /> : <Minus size={10} />}
+            Meta
+          </span>
+        </Tooltip>
       </div>
     </div>
   );

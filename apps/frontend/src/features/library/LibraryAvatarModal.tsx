@@ -10,7 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 
 import { Modal } from "@/components/composite";
-import { Button, ContextLoader, FlagIcon, ProgressiveImage } from "@/components/primitives";
+import { Button, ContextLoader, FlagIcon, ProgressiveImage, Tooltip } from "@/components/primitives";
 import { useAvatarMetadata, useAvatarSettings } from "@/features/avatars/hooks/use-avatar-detail";
 import { useAvatarSpeeches, useSpeechTypes } from "@/features/avatars/hooks/use-avatar-speeches";
 import { useLanguages } from "@/features/avatars/hooks/use-languages";
@@ -625,14 +625,15 @@ function DetailOverlay({
                   className="max-h-[60vh] object-contain"
                 />
               </div>
-              <button
-                type="button"
-                className="absolute top-2 right-2 z-20 p-1.5 rounded bg-[var(--color-surface-badge-overlay)] text-white/70 hover:text-white hover:bg-[var(--color-surface-badge-overlay)] opacity-0 group-hover/img:opacity-100 transition-all"
-                onClick={() => setExpanded((v) => !v)}
-                title={expanded ? "Compact" : "Expand"}
-              >
-                {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-              </button>
+              <Tooltip content={expanded ? "Compact" : "Expand"}>
+                <button
+                  type="button"
+                  className="absolute top-2 right-2 z-20 p-1.5 rounded bg-[var(--color-surface-badge-overlay)] text-white/70 hover:text-white hover:bg-[var(--color-surface-badge-overlay)] opacity-0 group-hover/img:opacity-100 transition-all"
+                  onClick={() => setExpanded((v) => !v)}
+                >
+                  {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                </button>
+              </Tooltip>
             </div>
             {/* Prev / Next navigation */}
             {(onPrev || onNext) && (
@@ -680,14 +681,15 @@ function DetailOverlay({
                 autoPlay
                 showControls
               />
-              <button
-                type="button"
-                className="absolute right-2 top-2 z-20 p-1.5 rounded bg-[var(--color-surface-badge-overlay)] text-white/70 hover:text-white hover:bg-[var(--color-surface-badge-overlay)] opacity-0 group-hover/video:opacity-100 transition-all"
-                onClick={() => setExpanded((v) => !v)}
-                title={expanded ? "Compact" : "Expand"}
-              >
-                {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-              </button>
+              <Tooltip content={expanded ? "Compact" : "Expand"}>
+                <button
+                  type="button"
+                  className="absolute right-2 top-2 z-20 p-1.5 rounded bg-[var(--color-surface-badge-overlay)] text-white/70 hover:text-white hover:bg-[var(--color-surface-badge-overlay)] opacity-0 group-hover/video:opacity-100 transition-all"
+                  onClick={() => setExpanded((v) => !v)}
+                >
+                  {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                </button>
+              </Tooltip>
             </div>
             {/* Prev / Next navigation */}
             {(onPrev || onNext) && (

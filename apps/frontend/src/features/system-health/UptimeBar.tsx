@@ -5,6 +5,8 @@
  * for 7-day and 30-day uptime windows.
  */
 
+import { Tooltip } from "@/components/primitives";
+
 import type { UptimeResponse } from "./types";
 
 /* --------------------------------------------------------------------------
@@ -64,31 +66,34 @@ export function UptimeBar({ uptime }: UptimeBarProps) {
       {/* Stacked bar */}
       <div className="flex h-4 w-full overflow-hidden rounded-[var(--radius-full)]">
         {segments.healthy > 0 && (
-          <div
-            className="flex items-center justify-center bg-[var(--color-action-success)] text-[10px] font-medium text-white"
-            style={{ width: `${segments.healthy}%` }}
-            title={`Healthy: ${fmtPct(segments.healthy)}`}
-          >
-            {segments.healthy >= MIN_LABEL_WIDTH && fmtPct(segments.healthy)}
-          </div>
+          <Tooltip content={`Healthy: ${fmtPct(segments.healthy)}`}>
+            <div
+              className="flex items-center justify-center bg-[var(--color-action-success)] text-[10px] font-medium text-white h-full"
+              style={{ width: `${segments.healthy}%` }}
+            >
+              {segments.healthy >= MIN_LABEL_WIDTH && fmtPct(segments.healthy)}
+            </div>
+          </Tooltip>
         )}
         {segments.degraded > 0 && (
-          <div
-            className="flex items-center justify-center bg-[var(--color-action-warning)] text-[10px] font-medium text-white"
-            style={{ width: `${segments.degraded}%` }}
-            title={`Degraded: ${fmtPct(segments.degraded)}`}
-          >
-            {segments.degraded >= MIN_LABEL_WIDTH && fmtPct(segments.degraded)}
-          </div>
+          <Tooltip content={`Degraded: ${fmtPct(segments.degraded)}`}>
+            <div
+              className="flex items-center justify-center bg-[var(--color-action-warning)] text-[10px] font-medium text-white h-full"
+              style={{ width: `${segments.degraded}%` }}
+            >
+              {segments.degraded >= MIN_LABEL_WIDTH && fmtPct(segments.degraded)}
+            </div>
+          </Tooltip>
         )}
         {segments.down > 0 && (
-          <div
-            className="flex items-center justify-center bg-[var(--color-action-danger)] text-[10px] font-medium text-white"
-            style={{ width: `${segments.down}%` }}
-            title={`Down: ${fmtPct(segments.down)}`}
-          >
-            {segments.down >= MIN_LABEL_WIDTH && fmtPct(segments.down)}
-          </div>
+          <Tooltip content={`Down: ${fmtPct(segments.down)}`}>
+            <div
+              className="flex items-center justify-center bg-[var(--color-action-danger)] text-[10px] font-medium text-white h-full"
+              style={{ width: `${segments.down}%` }}
+            >
+              {segments.down >= MIN_LABEL_WIDTH && fmtPct(segments.down)}
+            </div>
+          </Tooltip>
         )}
       </div>
 

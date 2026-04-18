@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { Button } from "@/components/primitives";
+import { Button, Tooltip } from "@/components/primitives";
 import { Tabs } from "@/components/composite";
 import { ChevronDown, Terminal } from "@/tokens/icons";
 import { cn } from "@/lib/cn";
@@ -97,15 +97,16 @@ export function ActivityConsoleDrawer() {
     >
       <div className="flex h-full flex-col">
         {/* Drag handle */}
-        <div
-          className="flex h-1.5 shrink-0 cursor-row-resize items-center justify-center hover:bg-[var(--color-surface-secondary)] active:bg-[var(--color-action-primary-hover)]"
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          title="Drag to resize"
-        >
-          <div className="h-0.5 w-8 rounded-full bg-[var(--color-border-default)]" />
-        </div>
+        <Tooltip content="Drag to resize">
+          <div
+            className="flex h-1.5 shrink-0 cursor-row-resize items-center justify-center hover:bg-[var(--color-surface-secondary)] active:bg-[var(--color-action-primary-hover)] w-full"
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+          >
+            <div className="h-0.5 w-8 rounded-full bg-[var(--color-border-default)]" />
+          </div>
+        </Tooltip>
 
         {/* Drawer header */}
         <div className="flex h-7 items-center justify-between px-2 border-b border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] shrink-0">

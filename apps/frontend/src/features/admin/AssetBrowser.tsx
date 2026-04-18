@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 
 import { EmptyState } from "@/components/domain";
 import { Stack } from "@/components/layout";
-import { Badge, FilterSelect, SearchInput ,  ContextLoader } from "@/components/primitives";
+import { Badge, FilterSelect, SearchInput, Tooltip,  ContextLoader } from "@/components/primitives";
 import { useAssets } from "@/features/admin/hooks/use-assets";
 import type { AssetSearchParams, AssetWithStats } from "@/features/admin/hooks/use-assets";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
@@ -79,13 +79,12 @@ function AssetCard({ asset, onSelect }: AssetCardProps) {
       )}
 
       <div className="mt-auto flex items-center justify-between pt-[var(--spacing-2)]">
-        <span
-          className="text-xs text-[var(--color-action-warning)]"
-          title={`${asset.avg_rating.toFixed(1)} / 5`}
-        >
-          {renderStars(asset.avg_rating)}
-          <span className="ml-1 text-[var(--color-text-muted)]">({asset.rating_count})</span>
-        </span>
+        <Tooltip content={`${asset.avg_rating.toFixed(1)} / 5`}>
+          <span className="text-xs text-[var(--color-action-warning)]">
+            {renderStars(asset.avg_rating)}
+            <span className="ml-1 text-[var(--color-text-muted)]">({asset.rating_count})</span>
+          </span>
+        </Tooltip>
 
         <div className="flex items-center gap-[var(--spacing-2)]">
           {asset.dependency_count > 0 && (

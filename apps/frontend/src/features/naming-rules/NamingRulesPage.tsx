@@ -11,6 +11,7 @@
 
 import { useMemo, useState } from "react";
 
+import { Modal } from "@/components/composite";
 import { Select, ContextLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { useSetPageTitle } from "@/hooks/useSetPageTitle";
@@ -140,15 +141,22 @@ function AdminNamingRulesView() {
                 />
               ))}
 
-              {/* Inline editor */}
-              {selectedCategory && (
-                <RuleEditor
-                  key={selectedCategory.id}
-                  category={selectedCategory}
-                  rule={selectedRule}
-                  onClose={() => setSelectedCategoryId(null)}
-                />
-              )}
+              {/* Editor modal */}
+              <Modal
+                open={selectedCategory != null}
+                onClose={() => setSelectedCategoryId(null)}
+                title={selectedCategory ? `Edit Template: ${selectedCategory.name}` : ""}
+                size="2xl"
+              >
+                {selectedCategory && (
+                  <RuleEditor
+                    key={selectedCategory.id}
+                    category={selectedCategory}
+                    rule={selectedRule}
+                    onClose={() => setSelectedCategoryId(null)}
+                  />
+                )}
+              </Modal>
             </Stack>
           ) : (
             <div className={TERMINAL_PANEL}>

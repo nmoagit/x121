@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 
-import { Badge } from "@/components/primitives";
+import { Badge, Tooltip } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { Check, X, AlertTriangle, Video } from "@/tokens/icons";
 
@@ -98,30 +98,33 @@ export function GalleryCell({
         {/* Hover overlay with quick actions */}
         {isHovered && cell.segment_id && (
           <div className="absolute inset-0 bg-[var(--color-surface-badge-overlay)] flex items-center justify-center gap-[var(--spacing-2)]">
-            <button
-              type="button"
-              onClick={onApprove}
-              className="p-2 rounded-full bg-[var(--color-action-success)] text-white hover:opacity-80 transition-opacity"
-              title="Approve"
-            >
-              <Check size={16} />
-            </button>
-            <button
-              type="button"
-              onClick={onReject}
-              className="p-2 rounded-full bg-[var(--color-action-danger)] text-white hover:opacity-80 transition-opacity"
-              title="Reject"
-            >
-              <X size={16} />
-            </button>
-            <button
-              type="button"
-              onClick={onFlag}
-              className="p-2 rounded-full bg-[var(--color-action-warning)] text-white hover:opacity-80 transition-opacity"
-              title="Flag"
-            >
-              <AlertTriangle size={16} />
-            </button>
+            <Tooltip content="Approve">
+              <button
+                type="button"
+                onClick={onApprove}
+                className="p-2 rounded-full bg-[var(--color-action-success)] text-white hover:opacity-80 transition-opacity"
+              >
+                <Check size={16} />
+              </button>
+            </Tooltip>
+            <Tooltip content="Reject">
+              <button
+                type="button"
+                onClick={onReject}
+                className="p-2 rounded-full bg-[var(--color-action-danger)] text-white hover:opacity-80 transition-opacity"
+              >
+                <X size={16} />
+              </button>
+            </Tooltip>
+            <Tooltip content="Flag">
+              <button
+                type="button"
+                onClick={onFlag}
+                className="p-2 rounded-full bg-[var(--color-action-warning)] text-white hover:opacity-80 transition-opacity"
+              >
+                <AlertTriangle size={16} />
+              </button>
+            </Tooltip>
           </div>
         )}
       </div>

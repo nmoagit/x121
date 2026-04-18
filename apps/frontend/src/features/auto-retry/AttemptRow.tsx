@@ -7,6 +7,7 @@
 
 import { Badge } from "@/components/primitives/Badge";
 import { Button } from "@/components/primitives/Button";
+import { Tooltip } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 
 import type { RetryAttempt } from "./types";
@@ -81,13 +82,14 @@ export function AttemptRow({
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             {attempt.is_selected && (
-              <span
-                className="text-[var(--color-action-success)] text-sm font-bold"
-                data-testid={`attempt-selected-${attempt.id}`}
-                title="Selected attempt"
-              >
-                &#10003;
-              </span>
+              <Tooltip content="Selected attempt">
+                <span
+                  className="text-[var(--color-action-success)] text-sm font-bold"
+                  data-testid={`attempt-selected-${attempt.id}`}
+                >
+                  &#10003;
+                </span>
+              </Tooltip>
             )}
             <span className="text-sm font-medium text-[var(--color-text-primary)]">
               Attempt #{attempt.attempt_number}

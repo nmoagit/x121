@@ -63,7 +63,7 @@ export function SetupWizardPage() {
   }, []);
 
   const handleGoToDashboard = useCallback(() => {
-    window.location.href = "/";
+    window.location.href = import.meta.env.BASE_URL;
   }, []);
 
   const handleSkip = useCallback(() => {

@@ -15,17 +15,33 @@ import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/composite/useToast";
 import { EmptyState } from "@/components/domain";
 import { Grid } from "@/components/layout";
-import { Button, ContextLoader, LoadingPane, Toggle } from "@/components/primitives";
+import { Button, ContextLoader, LoadingPane, Toggle, Tooltip } from "@/components/primitives";
 import { Checkbox } from "@/components/primitives/Checkbox";
 import { useSetToggle } from "@/hooks/useSetToggle";
 import { getStreamUrl } from "@/features/video-player";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
-import { AlertCircle, AlertTriangle, ChevronLeft, ChevronRight, Clock, EyeOff, Layers, MessageSquare, Pause, Play, Upload, Video } from "@/tokens/icons";
+import {
+  AlertCircle,
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  EyeOff,
+  Layers,
+  MessageSquare,
+  Pause,
+  Play,
+  Upload,
+  Video,
+} from "@/tokens/icons";
 import { useGpuAvailability } from "@/app/footer";
 
 import { Modal } from "@/components/composite/Modal";
-import { useBatchGenerate, useRemoveScenesFromSchedule } from "@/features/generation/hooks/use-generation";
+import {
+  useBatchGenerate,
+  useRemoveScenesFromSchedule,
+} from "@/features/generation/hooks/use-generation";
 import { ScheduleGenerationModal } from "@/features/generation/ScheduleGenerationModal";
 import { useSchedules } from "@/features/job-scheduling/hooks/use-job-scheduling";
 import { useMediaVariants } from "@/features/media/hooks/use-media-variants";
@@ -97,7 +113,14 @@ interface AvatarScenesTabProps {
   avatarEnabled?: boolean;
 }
 
-export function AvatarScenesTab({ avatarId, projectId, focusSceneId, focusSceneTypeId, focusTrackId, avatarEnabled = true }: AvatarScenesTabProps) {
+export function AvatarScenesTab({
+  avatarId,
+  projectId,
+  focusSceneId,
+  focusSceneTypeId,
+  focusTrackId,
+  avatarEnabled = true,
+}: AvatarScenesTabProps) {
   const queryClient = useQueryClient();
   const {
     data: settings,
@@ -228,7 +251,10 @@ export function AvatarScenesTab({ avatarId, projectId, focusSceneId, focusSceneT
       if (!imageVariants || imageVariants.length === 0) return null;
       if (trackSlug) {
         const match = findVariantForTrackWithFallback(
-          imageVariants, trackSlug, seedSlotNames, isSingleTrack,
+          imageVariants,
+          trackSlug,
+          seedSlotNames,
+          isSingleTrack,
         );
         return match?.id ?? null;
       }
@@ -264,21 +290,19 @@ export function AvatarScenesTab({ avatarId, projectId, focusSceneId, focusSceneT
       // If seed summary has slots for this pipeline, use it as the authority.
       // Only fall back to legacy variant matching when no seed summary data exists.
       const hasSeedSlots = (seedSummary?.slots?.length ?? 0) > 0;
-      const hasSeedAssignment = row.track_id != null
-        ? assignedSeedKeys.has(`${row.scene_type_id}::${row.track_id}`)
-        : assignedSeedKeys.has(`${row.scene_type_id}::*`);
+      const hasSeedAssignment =
+        row.track_id != null
+          ? assignedSeedKeys.has(`${row.scene_type_id}::${row.track_id}`)
+          : assignedSeedKeys.has(`${row.scene_type_id}::*`);
       const variantId = !hasSeedSlots ? resolveVariantId(row.track_slug) : null;
       const missingVariant =
-        (hasSeedAssignment || variantId !== null) ? null : `${row.track_slug ?? "seed"} seed`;
+        hasSeedAssignment || variantId !== null ? null : `${row.track_slug ?? "seed"} seed`;
       return { row, scene, missingVariant };
     });
   }, [expandedRows, scenes, resolveVariantId, assignedSeedKeys, seedSummary?.slots?.length]);
 
   /** Slots that have an existing scene (navigable in the detail modal). */
-  const navigableSlots = useMemo(
-    () => slots.filter((s) => s.scene !== null),
-    [slots],
-  );
+  const navigableSlots = useMemo(() => slots.filter((s) => s.scene !== null), [slots]);
 
   /* --- auto-open detail modal when focusSceneId or focusSceneTypeId is provided --- */
   const focusAppliedRef = useRef(false);
@@ -291,7 +315,9 @@ export function AvatarScenesTab({ avatarId, projectId, focusSceneId, focusSceneT
       idx = navigableSlots.findIndex((s) => s.scene?.id === focusSceneId);
     } else if (focusSceneTypeId != null) {
       idx = navigableSlots.findIndex(
-        (s) => s.row.scene_type_id === focusSceneTypeId && (s.row.track_id ?? null) === (focusTrackId ?? null),
+        (s) =>
+          s.row.scene_type_id === focusSceneTypeId &&
+          (s.row.track_id ?? null) === (focusTrackId ?? null),
       );
     }
 
@@ -301,7 +327,7 @@ export function AvatarScenesTab({ avatarId, projectId, focusSceneId, focusSceneT
     }
   }, [focusSceneId, focusSceneTypeId, focusTrackId, navigableSlots]);
 
-  const detailScene = detailSlotIndex !== null ? navigableSlots[detailSlotIndex] ?? null : null;
+  const detailScene = detailSlotIndex !== null ? (navigableSlots[detailSlotIndex] ?? null) : null;
 
   /* --- workflow lookup: fetch track configs for all unique scene types --- */
   const uniqueSceneTypeIds = useMemo(
@@ -362,10 +388,7 @@ export function AvatarScenesTab({ avatarId, projectId, focusSceneId, focusSceneT
   }, [slots]);
 
   /* --- can any slot actually generate? (must have seed image) --- */
-  const canGenerateAny = useMemo(
-    () => slots.some((s) => s.missingVariant === null),
-    [slots],
-  );
+  const canGenerateAny = useMemo(() => slots.some((s) => s.missingVariant === null), [slots]);
 
   /* --- scenes without any video versions --- */
   const missingSceneIds = useMemo(() => {
@@ -558,9 +581,7 @@ export function AvatarScenesTab({ avatarId, projectId, focusSceneId, focusSceneT
     const hasExisting = candidates.some((c) => c.hasVideo);
     if (hasExisting) {
       // Store auto-created IDs so they're included even if user deselects overrides
-      pendingAutoCreatedRef.current = sceneIds.filter(
-        (id) => !selectableSceneIds.includes(id),
-      );
+      pendingAutoCreatedRef.current = sceneIds.filter((id) => !selectableSceneIds.includes(id));
       setConfirmCandidates(candidates);
       setConfirmOpen(true);
     } else {
@@ -690,12 +711,7 @@ export function AvatarScenesTab({ avatarId, projectId, focusSceneId, focusSceneT
         )}
 
         <div className="flex items-center gap-[var(--spacing-2)] ml-auto">
-          <Toggle
-            checked={hideEmpty}
-            onChange={setHideEmpty}
-            label="Has video"
-            size="sm"
-          />
+          <Toggle checked={hideEmpty} onChange={setHideEmpty} label="Has video" size="sm" />
           <Button
             size="sm"
             variant={playback ? "primary" : "secondary"}
@@ -748,30 +764,38 @@ export function AvatarScenesTab({ avatarId, projectId, focusSceneId, focusSceneT
       )}
 
       {/* Scene Grid */}
-      <Grid cols={2} gap={4} className="sm:grid-cols-3 lg:grid-cols-4 min-[1500px]:grid-cols-5 min-[1700px]:grid-cols-6">
-        {slots.filter((slot) => !hideEmpty || (slot.scene && slot.scene.version_count > 0)).map((slot) => (
-          <SceneCard
-            key={`${slot.row.scene_type_id}-${slot.row.track_id ?? "none"}`}
-            slot={slot}
-            isSelected={slot.scene !== null && selected.has(slot.scene.id)}
-            onToggleSelect={toggleSelectItem}
-            onGenerate={handleSingleGenerate}
-            onSchedule={(sceneId) => handleScheduleScenes([sceneId])}
-            onCancelSchedule={(sceneId) => setCancelScheduleSceneId(sceneId)}
-            isScheduled={slot.scene !== null && sceneScheduleMap.has(slot.scene.id)}
-            onClickScene={(sceneId) => {
-              const idx = navigableSlots.findIndex((s) => s.scene?.id === sceneId);
-              if (idx >= 0) setDetailSlotIndex(idx);
-            }}
-            onVideoDrop={handleSceneVideoDrop}
-            onDisable={handleDisableSlot}
-            generating={isDisabled}
-            playback={playback}
-            hasWorkflow={workflowMap.get(`${slot.row.scene_type_id}::${slot.row.track_id}`) ?? false}
-            hasActiveGpu={hasActiveGpu}
-            hideTracks={isSingleTrack}
-          />
-        ))}
+      <Grid
+        cols={2}
+        gap={4}
+        className="sm:grid-cols-3 lg:grid-cols-4 min-[1500px]:grid-cols-5 min-[1700px]:grid-cols-6"
+      >
+        {slots
+          .filter((slot) => !hideEmpty || (slot.scene && slot.scene.version_count > 0))
+          .map((slot) => (
+            <SceneCard
+              key={`${slot.row.scene_type_id}-${slot.row.track_id ?? "none"}`}
+              slot={slot}
+              isSelected={slot.scene !== null && selected.has(slot.scene.id)}
+              onToggleSelect={toggleSelectItem}
+              onGenerate={handleSingleGenerate}
+              onSchedule={(sceneId) => handleScheduleScenes([sceneId])}
+              onCancelSchedule={(sceneId) => setCancelScheduleSceneId(sceneId)}
+              isScheduled={slot.scene !== null && sceneScheduleMap.has(slot.scene.id)}
+              onClickScene={(sceneId) => {
+                const idx = navigableSlots.findIndex((s) => s.scene?.id === sceneId);
+                if (idx >= 0) setDetailSlotIndex(idx);
+              }}
+              onVideoDrop={handleSceneVideoDrop}
+              onDisable={handleDisableSlot}
+              generating={isDisabled}
+              playback={playback}
+              hasWorkflow={
+                workflowMap.get(`${slot.row.scene_type_id}::${slot.row.track_id}`) ?? false
+              }
+              hasActiveGpu={hasActiveGpu}
+              hideTracks={isSingleTrack}
+            />
+          ))}
       </Grid>
 
       {/* Import confirmation modal */}
@@ -790,11 +814,7 @@ export function AvatarScenesTab({ avatarId, projectId, focusSceneId, focusSceneT
       />
 
       {/* Scene detail (clip gallery) modal */}
-      <Modal
-        open={detailSlotIndex !== null}
-        onClose={() => setDetailSlotIndex(null)}
-        size="3xl"
-      >
+      <Modal open={detailSlotIndex !== null} onClose={() => setDetailSlotIndex(null)} size="3xl">
         {detailScene && detailScene.scene && (
           <div className="flex flex-col gap-[var(--spacing-4)]">
             {/* Header with navigation + track badge */}
@@ -811,7 +831,9 @@ export function AvatarScenesTab({ avatarId, projectId, focusSceneId, focusSceneT
                 {detailScene.row.name}
               </h2>
               {!isSingleTrack && detailScene.row.track_slug && (
-                <span className={`text-xs font-mono font-medium ${TRACK_TEXT_COLORS[detailScene.row.track_slug] ?? "text-[var(--color-text-primary)]"}`}>
+                <span
+                  className={`text-xs font-mono font-medium ${TRACK_TEXT_COLORS[detailScene.row.track_slug] ?? "text-[var(--color-text-primary)]"}`}
+                >
                   {detailScene.row.track_name}
                 </span>
               )}
@@ -822,7 +844,11 @@ export function AvatarScenesTab({ avatarId, projectId, focusSceneId, focusSceneT
                 size="sm"
                 variant="ghost"
                 disabled={detailSlotIndex === navigableSlots.length - 1}
-                onClick={() => setDetailSlotIndex((i) => (i !== null && i < navigableSlots.length - 1 ? i + 1 : i))}
+                onClick={() =>
+                  setDetailSlotIndex((i) =>
+                    i !== null && i < navigableSlots.length - 1 ? i + 1 : i,
+                  )
+                }
                 icon={<ChevronRight size={16} />}
                 aria-label="Next scene"
               />
@@ -833,7 +859,9 @@ export function AvatarScenesTab({ avatarId, projectId, focusSceneId, focusSceneT
               generateLoading={batchGenerate.isPending}
               leftActions={
                 <div className="flex items-center gap-2">
-                  {workflowIdMap.get(`${detailScene.row.scene_type_id}::${detailScene.row.track_id}`) != null && (
+                  {workflowIdMap.get(
+                    `${detailScene.row.scene_type_id}::${detailScene.row.track_id}`,
+                  ) != null && (
                     <Button
                       size="sm"
                       variant="secondary"
@@ -854,12 +882,20 @@ export function AvatarScenesTab({ avatarId, projectId, focusSceneId, focusSceneT
                 </div>
               }
               generateDisabled={
-                isDisabled
-                || detailScene.missingVariant !== null
-                || !(workflowMap.get(`${detailScene.row.scene_type_id}::${detailScene.row.track_id}`) ?? false)
+                isDisabled ||
+                detailScene.missingVariant !== null ||
+                !(
+                  workflowMap.get(
+                    `${detailScene.row.scene_type_id}::${detailScene.row.track_id}`,
+                  ) ?? false
+                )
               }
               generateDisabledReason={
-                !(workflowMap.get(`${detailScene.row.scene_type_id}::${detailScene.row.track_id}`) ?? false)
+                !(
+                  workflowMap.get(
+                    `${detailScene.row.scene_type_id}::${detailScene.row.track_id}`,
+                  ) ?? false
+                )
                   ? "No workflow assigned to this scene type / track"
                   : detailScene.missingVariant !== null
                     ? "No seed image set"
@@ -872,23 +908,27 @@ export function AvatarScenesTab({ avatarId, projectId, focusSceneId, focusSceneT
       </Modal>
 
       {/* Prompt override modal */}
-      {detailScene && detailScene.scene && (() => {
-        const wfId = workflowIdMap.get(`${detailScene.row.scene_type_id}::${detailScene.row.track_id}`);
-        return wfId != null ? (
-          <Modal
-            title={`Prompt Overrides — ${detailScene.row.name}`}
-            open={promptOverrideOpen}
-            onClose={() => setPromptOverrideOpen(false)}
-            size="3xl"
-          >
-            <AvatarSceneOverrideEditor
-              avatarId={avatarId}
-              sceneTypeId={detailScene.row.scene_type_id}
-              workflowId={wfId}
-            />
-          </Modal>
-        ) : null;
-      })()}
+      {detailScene &&
+        detailScene.scene &&
+        (() => {
+          const wfId = workflowIdMap.get(
+            `${detailScene.row.scene_type_id}::${detailScene.row.track_id}`,
+          );
+          return wfId != null ? (
+            <Modal
+              title={`Prompt Overrides — ${detailScene.row.name}`}
+              open={promptOverrideOpen}
+              onClose={() => setPromptOverrideOpen(false)}
+              size="3xl"
+            >
+              <AvatarSceneOverrideEditor
+                avatarId={avatarId}
+                sceneTypeId={detailScene.row.scene_type_id}
+                workflowId={wfId}
+              />
+            </Modal>
+          ) : null;
+        })()}
 
       {/* Generate confirmation modal — warns about existing videos */}
       <GenerateConfirmModal
@@ -933,21 +973,29 @@ export function AvatarScenesTab({ avatarId, projectId, focusSceneId, focusSceneT
                   <span className="font-medium text-[var(--color-text-primary)]">
                     {firesAt
                       ? new Date(firesAt).toLocaleString(undefined, {
-                          weekday: "short", month: "short", day: "numeric",
-                          hour: "2-digit", minute: "2-digit",
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
                         })
                       : "unknown time"}
                   </span>
                 </p>
                 {groupSize > 1 && (
                   <p className="text-xs font-mono text-[var(--color-text-muted)]">
-                    Part of a group of {groupSize} scenes. Rescheduling will move only this scene to a new time.
+                    Part of a group of {groupSize} scenes. Rescheduling will move only this scene to
+                    a new time.
                   </p>
                 )}
               </div>
 
               <div className="flex justify-end gap-2 pt-1 border-t border-[var(--color-border-default)]">
-                <Button variant="secondary" size="sm" onClick={() => setCancelScheduleSceneId(null)}>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setCancelScheduleSceneId(null)}
+                >
                   Close
                 </Button>
                 <Button
@@ -1001,7 +1049,12 @@ interface SceneCardProps {
   onSchedule: (sceneId: number) => void;
   onCancelSchedule: (sceneId: number) => void;
   isScheduled: boolean;
-  onClickScene: (sceneId: number, name: string, trackName: string | null, trackSlug: string | null) => void;
+  onClickScene: (
+    sceneId: number,
+    name: string,
+    trackName: string | null,
+    trackSlug: string | null,
+  ) => void;
   onVideoDrop: (slot: SceneSlot, file: File) => void;
   onDisable: (slot: SceneSlot) => void;
   generating: boolean;
@@ -1012,7 +1065,23 @@ interface SceneCardProps {
   hideTracks?: boolean;
 }
 
-function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onSchedule, onCancelSchedule, isScheduled, onClickScene, onVideoDrop, onDisable, generating, playback, hasWorkflow, hasActiveGpu, hideTracks }: SceneCardProps) {
+function SceneCard({
+  slot,
+  isSelected,
+  onToggleSelect,
+  onGenerate,
+  onSchedule,
+  onCancelSchedule,
+  isScheduled,
+  onClickScene,
+  onVideoDrop,
+  onDisable,
+  generating,
+  playback,
+  hasWorkflow,
+  hasActiveGpu,
+  hideTracks,
+}: SceneCardProps) {
   const { row, scene } = slot;
   const isPlaceholder = scene === null;
   const hasSeedImage = slot.missingVariant === null;
@@ -1066,7 +1135,8 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onSchedule, o
       <div
         className="flex flex-col"
         onClick={() => {
-          if (scene) onClickScene(scene.id, row.name, row.track_name ?? null, row.track_slug ?? null);
+          if (scene)
+            onClickScene(scene.id, row.name, row.track_name ?? null, row.track_slug ?? null);
         }}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
@@ -1077,7 +1147,9 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onSchedule, o
           {dragOver ? (
             <div className="flex flex-col items-center justify-center border-2 border-dashed border-[var(--color-action-primary)] aspect-video">
               <Upload size={24} className="text-[var(--color-action-primary)]" />
-              <span className="text-xs text-[var(--color-action-primary)] mt-1">Drop video here</span>
+              <span className="text-xs text-[var(--color-action-primary)] mt-1">
+                Drop video here
+              </span>
             </div>
           ) : (
             <SceneVideoThumbnail versionId={scene?.latest_version_id ?? null} playback={playback} />
@@ -1099,41 +1171,42 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onSchedule, o
           )}
 
           {/* Disable button — top-right, visible on hover */}
-          <button
-            type="button"
-            title="Disable this scene"
-            className="absolute top-[var(--spacing-2)] right-[var(--spacing-2)] opacity-0 group-hover/card:opacity-100 transition-opacity p-1 rounded bg-[var(--color-surface-badge-overlay)] hover:bg-black/80 text-white"
-            onClick={(e) => { e.stopPropagation(); onDisable(slot); }}
-          >
-            <EyeOff size={14} />
-          </button>
+          <Tooltip content="Disable this scene">
+            <button
+              type="button"
+              className="absolute top-[var(--spacing-2)] right-[var(--spacing-2)] opacity-0 group-hover/card:opacity-100 transition-opacity p-1 rounded bg-[var(--color-surface-badge-overlay)] hover:bg-black/80 text-white"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDisable(slot);
+              }}
+            >
+              <EyeOff size={14} />
+            </button>
+          </Tooltip>
 
           {/* Status icons — bottom-right overlay */}
           {(slot.missingVariant || !hasWorkflow || scene?.has_newer_than_final) && (
             <div className="absolute bottom-[var(--spacing-1)] right-[var(--spacing-1)] flex items-center gap-1">
               {scene?.has_newer_than_final && (
-                <span
-                  className="flex items-center justify-center size-5 rounded-full bg-blue-500/80"
-                  title="Newer clips exist after the final version"
-                >
-                  <Layers size={11} className="text-white" />
-                </span>
+                <Tooltip content="Newer clips exist after the final version">
+                  <span className="flex items-center justify-center size-5 rounded-full bg-blue-500/80">
+                    <Layers size={11} className="text-white" />
+                  </span>
+                </Tooltip>
               )}
               {slot.missingVariant && (
-                <span
-                  className="flex items-center justify-center size-5 rounded-full bg-orange-500/80"
-                  title={`Missing seed: ${slot.missingVariant}`}
-                >
-                  <AlertTriangle size={11} className="text-white" />
-                </span>
+                <Tooltip content={`Missing seed: ${slot.missingVariant}`}>
+                  <span className="flex items-center justify-center size-5 rounded-full bg-orange-500/80">
+                    <AlertTriangle size={11} className="text-white" />
+                  </span>
+                </Tooltip>
               )}
               {!hasWorkflow && (
-                <span
-                  className="flex items-center justify-center size-5 rounded-full bg-red-500/80"
-                  title="No workflow assigned"
-                >
-                  <AlertCircle size={11} className="text-white" />
-                </span>
+                <Tooltip content="No workflow assigned">
+                  <span className="flex items-center justify-center size-5 rounded-full bg-red-500/80">
+                    <AlertCircle size={11} className="text-white" />
+                  </span>
+                </Tooltip>
               )}
             </div>
           )}
@@ -1142,7 +1215,9 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onSchedule, o
           {isGenerating && estimated > 0 && (
             <div className="absolute bottom-0 inset-x-0 bg-[var(--color-surface-badge-overlay)] px-[var(--spacing-2)] py-[var(--spacing-1)]">
               <div className="flex items-center justify-between text-[10px] text-white mb-0.5">
-                <span>{completed} / {estimated} segments</span>
+                <span>
+                  {completed} / {estimated} segments
+                </span>
                 <span>{pct}%</span>
               </div>
               <div className="h-1 w-full rounded-full bg-white/30">
@@ -1164,7 +1239,13 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onSchedule, o
             </span>
             <span className="shrink-0 ml-auto inline-flex items-center gap-1 font-mono text-[10px]">
               {!hideTracks && row.track_slug && (
-                <span className={TRACK_TEXT_COLORS[row.track_slug] ?? "text-[var(--color-text-primary)]"}>{row.track_name}</span>
+                <span
+                  className={
+                    TRACK_TEXT_COLORS[row.track_slug] ?? "text-[var(--color-text-primary)]"
+                  }
+                >
+                  {row.track_name}
+                </span>
               )}
               {row.has_clothes_off_transition && (
                 <span className="text-[var(--color-data-orange)]">clothes off</span>
@@ -1174,61 +1255,95 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onSchedule, o
 
           {/* Status row — terminal style */}
           <div className="flex items-center gap-2 font-mono text-[10px] text-[var(--color-text-muted)]">
-            <span className={
-              isPlaceholder ? "text-[var(--color-text-muted)]"
-              : isApproved ? "text-[var(--color-data-green)]"
-              : isGenerating ? "text-[var(--color-data-cyan)]"
-              : isFailed || isRejected ? "text-[var(--color-data-red)]"
-              : "text-[var(--color-data-cyan)]"
-            }>
-              {isPlaceholder ? "not started" : (isGenerating && !hasActiveGpu) ? "queued" : sceneStatusLabel(scene.status_id).toLowerCase()}
+            <span
+              className={
+                isPlaceholder
+                  ? "text-[var(--color-text-muted)]"
+                  : isApproved
+                    ? "text-[var(--color-data-green)]"
+                    : isGenerating
+                      ? "text-[var(--color-data-cyan)]"
+                      : isFailed || isRejected
+                        ? "text-[var(--color-data-red)]"
+                        : "text-[var(--color-data-cyan)]"
+              }
+            >
+              {isPlaceholder
+                ? "not started"
+                : isGenerating && !hasActiveGpu
+                  ? "queued"
+                  : sceneStatusLabel(scene.status_id).toLowerCase()}
             </span>
             {isGenerating && !hasActiveGpu && (
-              <span className="flex items-center gap-0.5 text-[var(--color-data-orange)]" title="No GPU instances are active — job is queued">
-                <AlertTriangle size={10} /> no gpu
-              </span>
+              <Tooltip content="No GPU instances are active — job is queued">
+                <span className="flex items-center gap-0.5 text-[var(--color-data-orange)]">
+                  <AlertTriangle size={10} /> no gpu
+                </span>
+              </Tooltip>
             )}
             <span className="opacity-30">|</span>
             <span>{sourceLabel(row.source).toLowerCase()}</span>
           </div>
 
           {/* Generate + Schedule button group — xs size */}
-          <div
-            className="flex w-full"
-            title={
-              !hasWorkflow ? "No workflow assigned to this scene type / track"
-              : !hasSeedImage ? "No seed image set"
-              : undefined
-            }
-          >
-            <Button
-              size="xs"
-              variant={isFailed ? "danger" : "secondary"}
-              disabled={isPlaceholder || isGenerating || generating || !hasSeedImage || !hasWorkflow}
-              onClick={(e) => { e.stopPropagation(); scene && onGenerate(scene.id); }}
-              icon={<Play size={12} />}
-              className="flex-1 !rounded-r-none"
-            >
-              {isGenerating
-                ? (hasActiveGpu ? "Generating\u2026" : "Queued")
-                : scene?.status_id === SCENE_STATUS_SCHEDULED ? "Scheduled"
-                : isFailed ? "Retry" : "Generate"}
-            </Button>
-            <Button
-              size="xs"
-              variant={isScheduled ? "danger" : "secondary"}
-              disabled={isPlaceholder || isGenerating || generating || (!isScheduled && (!hasSeedImage || !hasWorkflow))}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (!scene) return;
-                if (isScheduled) onCancelSchedule(scene.id);
-                else onSchedule(scene.id);
-              }}
-              icon={<Clock size={12} />}
-              className="shrink-0 !rounded-l-none !border-l-0"
-              aria-label={isScheduled ? "Cancel scheduled generation" : "Schedule generation"}
-            />
-          </div>
+          {(() => {
+            const disabledReason = !hasWorkflow
+              ? "No workflow assigned to this scene type / track"
+              : !hasSeedImage
+                ? "No seed image set"
+                : null;
+            const innerDiv = (
+              <div className="flex w-full">
+                <Button
+                  size="xs"
+                  variant={isFailed ? "danger" : "secondary"}
+                  disabled={
+                    isPlaceholder || isGenerating || generating || !hasSeedImage || !hasWorkflow
+                  }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    scene && onGenerate(scene.id);
+                  }}
+                  icon={<Play size={12} />}
+                  className="flex-1 !rounded-r-none"
+                >
+                  {isGenerating
+                    ? hasActiveGpu
+                      ? "Generating\u2026"
+                      : "Queued"
+                    : scene?.status_id === SCENE_STATUS_SCHEDULED
+                      ? "Scheduled"
+                      : isFailed
+                        ? "Retry"
+                        : "Generate"}
+                </Button>
+                <Button
+                  size="xs"
+                  variant={isScheduled ? "danger" : "secondary"}
+                  disabled={
+                    isPlaceholder ||
+                    isGenerating ||
+                    generating ||
+                    (!isScheduled && (!hasSeedImage || !hasWorkflow))
+                  }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!scene) return;
+                    if (isScheduled) onCancelSchedule(scene.id);
+                    else onSchedule(scene.id);
+                  }}
+                  icon={<Clock size={12} />}
+                  className="shrink-0 !rounded-l-none !border-l-0"
+                  aria-label={isScheduled ? "Cancel scheduled generation" : "Schedule generation"}
+                />
+              </div>
+            );
+            return disabledReason ? (
+              <Tooltip content={disabledReason}>{innerDiv}</Tooltip>
+            ) : (
+              innerDiv
+            );
+          })()}
         </div>
       </div>
     </div>
@@ -1239,7 +1354,10 @@ function SceneCard({ slot, isSelected, onToggleSelect, onGenerate, onSchedule, o
    SceneVideoThumbnail — shows the latest video version as a thumbnail
    -------------------------------------------------------------------------- */
 
-function SceneVideoThumbnail({ versionId, playback }: { versionId: number | null; playback: boolean }) {
+function SceneVideoThumbnail({
+  versionId,
+  playback,
+}: { versionId: number | null; playback: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -1273,7 +1391,10 @@ function SceneVideoThumbnail({ versionId, playback }: { versionId: number | null
     v.muted = true;
     v.src = streamUrl;
     v.onloadeddata = () => setIsLoaded(true);
-    return () => { v.src = ""; v.onloadeddata = null; };
+    return () => {
+      v.src = "";
+      v.onloadeddata = null;
+    };
   }, [isVisible, streamUrl]);
 
   if (!versionId) {
@@ -1286,7 +1407,10 @@ function SceneVideoThumbnail({ versionId, playback }: { versionId: number | null
   }
 
   return (
-    <div ref={containerRef} className="relative w-full rounded aspect-video bg-black overflow-hidden">
+    <div
+      ref={containerRef}
+      className="relative w-full rounded aspect-video bg-black overflow-hidden"
+    >
       {/* Context-aware loader — visible until the video has loaded */}
       {!isLoaded && (
         <div className="absolute inset-0 flex items-center justify-center">

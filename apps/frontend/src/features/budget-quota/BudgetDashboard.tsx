@@ -3,7 +3,7 @@
  * trend projection, and consumption history chart (PRD-93).
  */
 
-import { Badge } from "@/components/primitives";
+import { Badge, Tooltip } from "@/components/primitives";
 import { Card, CardBody, CardHeader } from "@/components/composite";
 import { cn } from "@/lib/cn";
 
@@ -88,16 +88,14 @@ function ConsumptionChart({ history }: { history: DailyConsumption[] }) {
         const height = (day.total_gpu_hours / maxHours) * 100;
 
         return (
-          <div
-            key={day.day}
-            className="flex-1 flex flex-col justify-end items-center gap-0"
-            title={`${day.day}: ${day.total_gpu_hours.toFixed(2)}h`}
-          >
-            <div
-              className="w-full bg-[var(--color-action-primary)] rounded-t-sm"
-              style={{ height: `${height}%` }}
-            />
-          </div>
+          <Tooltip key={day.day} content={`${day.day}: ${day.total_gpu_hours.toFixed(2)}h`}>
+            <div className="flex-1 flex flex-col justify-end items-center gap-0 w-full">
+              <div
+                className="w-full bg-[var(--color-action-primary)] rounded-t-sm"
+                style={{ height: `${height}%` }}
+              />
+            </div>
+          </Tooltip>
         );
       })}
     </div>

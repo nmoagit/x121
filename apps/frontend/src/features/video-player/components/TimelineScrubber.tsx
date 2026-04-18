@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 
+import { Tooltip } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 
 import { frameToSeconds } from "../frame-utils";
@@ -165,16 +166,18 @@ export function TimelineScrubber({
           const endPct = (frameToSeconds(range.end, framerate) / duration) * 100;
           return (
             <div key={`markers-${range.start}-${range.end}`}>
-              <div
-                className="absolute w-px bg-amber-500/70"
-                style={{ left: `${startPct}%`, top: "-2px", bottom: "-2px" }}
-                title={`Annotation start: F${range.start}`}
-              />
-              <div
-                className="absolute w-px bg-amber-500/70"
-                style={{ left: `${endPct}%`, top: "-2px", bottom: "-2px" }}
-                title={`Annotation end: F${range.end}`}
-              />
+              <Tooltip content={`Annotation start: F${range.start}`}>
+                <div
+                  className="absolute w-px bg-amber-500/70"
+                  style={{ left: `${startPct}%`, top: "-2px", bottom: "-2px" }}
+                />
+              </Tooltip>
+              <Tooltip content={`Annotation end: F${range.end}`}>
+                <div
+                  className="absolute w-px bg-amber-500/70"
+                  style={{ left: `${endPct}%`, top: "-2px", bottom: "-2px" }}
+                />
+              </Tooltip>
             </div>
           );
         })}
@@ -189,39 +192,41 @@ export function TimelineScrubber({
         const isLooped = inPoint === range.start && outPoint === range.end;
 
         return (
-          <div
-            key={`click-${range.start}-${range.end}`}
-            className={cn(
-              "absolute top-0 bottom-0 z-10 cursor-pointer",
-              "hover:bg-amber-500/15 transition-colors",
-              isLooped && "bg-amber-500/10 border-y border-amber-500/30",
-            )}
-            style={{ left: `${startPct}%`, width: `${endPct - startPct}%` }}
-            title={`F${range.start}–F${range.end} (click to loop)`}
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              handleAnnotationClick(range);
-            }}
-          />
+          <Tooltip key={`click-${range.start}-${range.end}`} content={`F${range.start}–F${range.end} (click to loop)`}>
+            <div
+              className={cn(
+                "absolute top-0 bottom-0 z-10 cursor-pointer",
+                "hover:bg-amber-500/15 transition-colors",
+                isLooped && "bg-amber-500/10 border-y border-amber-500/30",
+              )}
+              style={{ left: `${startPct}%`, width: `${endPct - startPct}%` }}
+              onPointerDown={(e) => {
+                e.stopPropagation();
+                handleAnnotationClick(range);
+              }}
+            />
+          </Tooltip>
         );
       })}
 
       {/* In-point marker */}
       {inPercent !== null && (
-        <div
-          className="absolute top-0 bottom-0 w-0.5 bg-[var(--color-status-warning)] pointer-events-none"
-          style={{ left: `${inPercent}%` }}
-          title={`In-point: frame ${inPoint}`}
-        />
+        <Tooltip content={`In-point: frame ${inPoint}`}>
+          <div
+            className="absolute top-0 bottom-0 w-0.5 bg-[var(--color-status-warning)] pointer-events-none"
+            style={{ left: `${inPercent}%` }}
+          />
+        </Tooltip>
       )}
 
       {/* Out-point marker */}
       {outPercent !== null && (
-        <div
-          className="absolute top-0 bottom-0 w-0.5 bg-[var(--color-status-warning)] pointer-events-none"
-          style={{ left: `${outPercent}%` }}
-          title={`Out-point: frame ${outPoint}`}
-        />
+        <Tooltip content={`Out-point: frame ${outPoint}`}>
+          <div
+            className="absolute top-0 bottom-0 w-0.5 bg-[var(--color-status-warning)] pointer-events-none"
+            style={{ left: `${outPercent}%` }}
+          />
+        </Tooltip>
       )}
 
       {/* Playhead */}

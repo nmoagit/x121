@@ -25,6 +25,8 @@ import "@xyflow/react/dist/style.css";
 import "./workflow-canvas.css";
 import dagre from "@dagrejs/dagre";
 
+import { Tooltip } from "@/components/primitives";
+
 /* --------------------------------------------------------------------------
    Props
    -------------------------------------------------------------------------- */
@@ -200,15 +202,16 @@ function ZoomIndicator() {
 
   return (
     <Panel position="top-right">
-      <button
-        type="button"
-        onClick={() => fitView()}
-        className="rounded px-2 py-1 text-xs font-medium"
-        style={{ background: "var(--color-surface-secondary)", color: "var(--color-text-secondary)", border: "1px solid var(--color-border-default)" }}
-        title="Click to fit view"
-      >
-        {Math.round(zoom * 100)}%
-      </button>
+      <Tooltip content="Click to fit view">
+        <button
+          type="button"
+          onClick={() => fitView()}
+          className="rounded px-2 py-1 text-xs font-medium"
+          style={{ background: "var(--color-surface-secondary)", color: "var(--color-text-secondary)", border: "1px solid var(--color-border-default)" }}
+        >
+          {Math.round(zoom * 100)}%
+        </button>
+      </Tooltip>
     </Panel>
   );
 }

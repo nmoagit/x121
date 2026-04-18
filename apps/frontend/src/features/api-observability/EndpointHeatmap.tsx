@@ -8,7 +8,7 @@
 import { Fragment, useMemo } from "react";
 
 import { Card, CardBody, CardHeader } from "@/components/composite/Card";
-import { ContextLoader } from "@/components/primitives";
+import { ContextLoader, Tooltip } from "@/components/primitives";
 import { Layers } from "@/tokens/icons";
 
 import type { Granularity, HeatmapCell, TimePeriod } from "./types";
@@ -120,26 +120,28 @@ export function EndpointHeatmap({ data, isLoading }: EndpointHeatmapProps) {
             {/* Rows: one per endpoint */}
             {endpoints.map((endpoint) => (
               <Fragment key={endpoint}>
-                <div
-                  className={`truncate pr-2 leading-8 ${TYPO_CAPTION}`}
-                  title={endpoint}
-                >
-                  {endpoint}
-                </div>
+                <Tooltip content={endpoint}>
+                  <div className={`truncate pr-2 leading-8 ${TYPO_CAPTION}`}>
+                    {endpoint}
+                  </div>
+                </Tooltip>
                 {timeBuckets.map((bucket) => {
                   const cell = cellMap.get(`${endpoint}::${bucket}`);
                   const intensity = cell?.intensity ?? 0;
                   const count = cell?.request_count ?? 0;
 
                   return (
-                    <div
+                    <Tooltip
                       key={`${endpoint}::${bucket}`}
-                      className="h-8 rounded-[var(--radius-sm)] transition-colors"
-                      style={{ backgroundColor: intensityToColor(intensity) }}
-                      title={`${endpoint} @ ${formatChartTime(bucket)}: ${count} requests`}
-                      role="gridcell"
-                      aria-label={`${endpoint}, ${formatChartTime(bucket)}, ${count} requests`}
-                    />
+                      content={`${endpoint} @ ${formatChartTime(bucket)}: ${count} requests`}
+                    >
+                      <div
+                        className="h-8 rounded-[var(--radius-sm)] transition-colors w-full"
+                        style={{ backgroundColor: intensityToColor(intensity) }}
+                        role="gridcell"
+                        aria-label={`${endpoint}, ${formatChartTime(bucket)}, ${count} requests`}
+                      />
+                    </Tooltip>
                   );
                 })}
               </Fragment>

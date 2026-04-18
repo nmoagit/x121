@@ -6,6 +6,7 @@
  */
 
 import { Card, CardBody, CardHeader } from "@/components/composite";
+import { Tooltip } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 
 import type { SceneQaSummary } from "./types";
@@ -38,13 +39,14 @@ function BarSegment({
   const pct = (value / total) * 100;
 
   return (
-    <div
-      data-testid={`bar-segment-${label}`}
-      className="h-full transition-all"
-      style={{ width: `${pct}%`, backgroundColor: color }}
-      title={`${label}: ${value}`}
-      aria-label={`${label}: ${value} of ${total}`}
-    />
+    <Tooltip content={`${label}: ${value}`}>
+      <div
+        data-testid={`bar-segment-${label}`}
+        className="h-full transition-all"
+        style={{ width: `${pct}%`, backgroundColor: color }}
+        aria-label={`${label}: ${value} of ${total}`}
+      />
+    </Tooltip>
   );
 }
 

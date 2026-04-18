@@ -4,7 +4,7 @@
  * Provides sort, filter, variant toggle, bulk approve, and cell count.
  */
 
-import { Button, Select } from "@/components/primitives";
+import { Button, Select, Tooltip } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { Check, ChevronUp, ChevronDown } from "@/tokens/icons";
 
@@ -73,14 +73,15 @@ export function GalleryControls({
           onChange={handleSortFieldChange}
           label="Sort by"
         />
-        <button
-          type="button"
-          onClick={onToggleDirection}
-          className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
-          title={`Sort ${sort.direction === "asc" ? "descending" : "ascending"}`}
-        >
-          <DirectionIcon size={16} />
-        </button>
+        <Tooltip content={`Sort ${sort.direction === "asc" ? "descending" : "ascending"}`}>
+          <button
+            type="button"
+            onClick={onToggleDirection}
+            className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+          >
+            <DirectionIcon size={16} />
+          </button>
+        </Tooltip>
       </div>
 
       {/* Status filter */}

@@ -10,7 +10,7 @@ import { useMemo, useState } from "react";
 import { ConfirmModal } from "@/components/composite";
 import { EmptyState } from "@/components/domain";
 import { PageHeader, Stack } from "@/components/layout";
-import { Button, ContextLoader, FilterSelect, SearchInput, Toggle } from "@/components/primitives";
+import { Button, ContextLoader, FilterSelect, SearchInput, Toggle, Tooltip } from "@/components/primitives";
 import { useAnnotationsBrowse, useDeleteBrowseAnnotation } from "@/features/annotations";
 import type { AnnotatedItem } from "@/features/annotations";
 import { usePipelineContextSafe } from "@/features/pipelines";
@@ -84,17 +84,18 @@ function AnnotationCard({
   return (
     <div className="group relative flex flex-col rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] overflow-hidden transition-shadow hover:shadow-[var(--shadow-md)]">
       {/* Delete button */}
-      <button
-        type="button"
-        title="Delete annotation"
-        onClick={(e) => {
-          e.stopPropagation();
-          onDelete();
-        }}
-        className="absolute top-1.5 left-1.5 z-10 rounded-[2px] bg-red-600/80 p-0.5 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 cursor-pointer"
-      >
-        <Trash2 size={10} />
-      </button>
+      <Tooltip content="Delete annotation">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          className="absolute top-1.5 left-1.5 z-10 rounded-[2px] bg-red-600/80 p-0.5 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 cursor-pointer"
+        >
+          <Trash2 size={10} />
+        </button>
+      </Tooltip>
 
       {/* Clickable card body */}
       <button
@@ -116,10 +117,10 @@ function AnnotationCard({
           )}
           {/* Overlays */}
           <div className="absolute top-1.5 right-1.5 flex gap-1">
-            <span className="font-mono text-[10px] text-[var(--color-text-primary)] bg-[var(--color-surface-badge-overlay)] px-1 py-px rounded-[2px]">
+            <span className="font-mono text-[10px] text-[var(--color-text-badge-overlay)] bg-[var(--color-surface-badge-overlay)] px-1 py-px rounded-[2px]">
               f{item.frame_number}
             </span>
-            <span className="font-mono text-[10px] text-[var(--color-data-cyan)] bg-[var(--color-surface-badge-overlay)] px-1 py-px rounded-[2px]">
+            <span className="font-mono text-[10px] text-cyan-400 bg-[var(--color-surface-badge-overlay)] px-1 py-px rounded-[2px]">
               {item.annotation_count}
             </span>
           </div>

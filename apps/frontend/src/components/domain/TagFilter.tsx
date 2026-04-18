@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { Chip } from "@/components/primitives/Chip";
+import { Tooltip } from "@/components/primitives";
 import { Settings } from "@/tokens/icons";
 
 import { LabelManagerModal } from "./LabelManagerModal";
@@ -136,14 +137,15 @@ export function TagFilter({
           <span className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
             Tags
           </span>
-          <button
-            type="button"
-            onClick={() => setManagerOpen(true)}
-            className="p-0.5 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors"
-            title="Manage tags"
-          >
-            <Settings size={12} />
-          </button>
+          <Tooltip content="Manage tags">
+            <button
+              type="button"
+              onClick={() => setManagerOpen(true)}
+              className="p-0.5 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors"
+            >
+              <Settings size={12} />
+            </button>
+          </Tooltip>
         </div>
         <div className="flex items-center gap-2">
           {/* AND/OR toggle */}

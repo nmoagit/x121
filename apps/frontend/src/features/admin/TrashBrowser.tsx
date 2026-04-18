@@ -1,4 +1,4 @@
-import { Button } from "@/components/primitives";
+import { Button, Tooltip } from "@/components/primitives";
 import {
   useTrashQueue,
   useRestoreTrashEntry,
@@ -44,11 +44,10 @@ export function TrashBrowser() {
                 key={entry.id}
                 className={cn(TERMINAL_DIVIDER, TERMINAL_ROW_HOVER)}
               >
-                <td
-                  className="max-w-xs truncate px-4 py-2 text-[var(--color-data-cyan)]"
-                  title={entry.file_path}
-                >
-                  {entry.file_path}
+                <td className="max-w-xs truncate px-4 py-2 text-[var(--color-data-cyan)]">
+                  <Tooltip content={entry.file_path}>
+                    <span className="truncate">{entry.file_path}</span>
+                  </Tooltip>
                 </td>
                 <td className="px-4 py-2 text-[var(--color-text-secondary)]">
                   {entry.entity_type}

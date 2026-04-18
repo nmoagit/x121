@@ -5,7 +5,7 @@ import { Modal } from "@/components/composite";
 import { NotesModal } from "@/components/domain/NotesModal";
 import type { TagInfo } from "@/components/domain/TagChip";
 import { TagInput } from "@/components/domain/TagInput";
-import { Button, Chip, Input } from "@/components/primitives";
+import { Button, Chip, Input, Tooltip } from "@/components/primitives";
 import { AnnotationPresetManager } from "@/features/annotations/AnnotationPresetManager";
 import { DrawingCanvas } from "@/features/annotations/DrawingCanvas";
 import { useAnnotationPresets } from "@/features/annotations/hooks/use-annotation-presets";
@@ -614,14 +614,15 @@ export function ClipPlaybackModal({
               </>
             )}
             {/* Expand toggle — overlays top-right of video, shifts down when annotation toolbar is visible */}
-            <button
-              type="button"
-              onClick={() => setExpanded((v) => !v)}
-              className={`absolute right-2 z-20 p-1.5 rounded bg-[var(--color-surface-badge-overlay)] text-white/70 hover:text-white hover:bg-[var(--color-surface-badge-overlay)] opacity-0 group-hover/video:opacity-100 transition-all ${annotating ? "top-10" : "top-2"}`}
-              title={expanded ? "Compact" : "Expand"}
-            >
-              {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-            </button>
+            <Tooltip content={expanded ? "Compact" : "Expand"}>
+              <button
+                type="button"
+                onClick={() => setExpanded((v) => !v)}
+                className={`absolute right-2 z-20 p-1.5 rounded bg-[var(--color-surface-badge-overlay)] text-white/70 hover:text-white hover:bg-[var(--color-surface-badge-overlay)] opacity-0 group-hover/video:opacity-100 transition-all ${annotating ? "top-10" : "top-2"}`}
+              >
+                {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+              </button>
+            </Tooltip>
           </div>
 
           {/* Annotated frames indicator — chips toggle visibility */}
@@ -708,77 +709,82 @@ export function ClipPlaybackModal({
                   </>
                 ) : (
                   <>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const url = getStreamUrl("version", clip.id, "full");
-                        const ext = clip.file_path?.split(".").pop() ?? "mp4";
-                        const labelSuffix =
-                          clipTags.length > 0
-                            ? `_[${clipTags.map((t) => slugify(t.display_name)).join(",")}]`
-                            : "";
-                        const filename = meta
-                          ? `${slugify(meta.projectName)}_${slugify(meta.avatarName)}_${slugify(meta.sceneTypeName)}_${slugify(meta.trackName)}_v${clip.version_number}${labelSuffix}.${ext}`
-                          : `clip_v${clip.version_number}${labelSuffix}.${ext}`;
-                        const a = document.createElement("a");
-                        a.href = url;
-                        a.download = filename;
-                        a.click();
-                      }}
-                      className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors"
-                      title="Export"
-                    >
-                      <Download size={14} />
-                    </button>
+                    <Tooltip content="Export">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const url = getStreamUrl("version", clip.id, "full");
+                          const ext = clip.file_path?.split(".").pop() ?? "mp4";
+                          const labelSuffix =
+                            clipTags.length > 0
+                              ? `_[${clipTags.map((t) => slugify(t.display_name)).join(",")}]`
+                              : "";
+                          const filename = meta
+                            ? `${slugify(meta.projectName)}_${slugify(meta.avatarName)}_${slugify(meta.sceneTypeName)}_${slugify(meta.trackName)}_v${clip.version_number}${labelSuffix}.${ext}`
+                            : `clip_v${clip.version_number}${labelSuffix}.${ext}`;
+                          const a = document.createElement("a");
+                          a.href = url;
+                          a.download = filename;
+                          a.click();
+                        }}
+                        className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors"
+                      >
+                        <Download size={14} />
+                      </button>
+                    </Tooltip>
 
                     <div className="w-px h-4 bg-[var(--color-border-default)]" />
 
-                    <button
-                      type="button"
-                      onClick={onApprove}
-                      disabled={!onApprove}
-                      className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${clip.qa_status === "approved" ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-green)] hover:bg-[var(--color-surface-secondary)]"}`}
-                      title={clip.qa_status === "approved" ? "Approved" : "Approve"}
-                    >
-                      <CheckCircle size={14} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={onReject}
-                      disabled={!onReject}
-                      className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${clip.qa_status === "rejected" ? "text-[var(--color-data-red)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-red)] hover:bg-[var(--color-surface-secondary)]"}`}
-                      title={clip.qa_status === "rejected" ? "Rejected" : "Reject"}
-                    >
-                      <XCircle size={14} />
-                    </button>
+                    <Tooltip content={clip.qa_status === "approved" ? "Approved" : "Approve"}>
+                      <button
+                        type="button"
+                        onClick={onApprove}
+                        disabled={!onApprove}
+                        className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${clip.qa_status === "approved" ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-green)] hover:bg-[var(--color-surface-secondary)]"}`}
+                      >
+                        <CheckCircle size={14} />
+                      </button>
+                    </Tooltip>
+                    <Tooltip content={clip.qa_status === "rejected" ? "Rejected" : "Reject"}>
+                      <button
+                        type="button"
+                        onClick={onReject}
+                        disabled={!onReject}
+                        className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${clip.qa_status === "rejected" ? "text-[var(--color-data-red)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-red)] hover:bg-[var(--color-surface-secondary)]"}`}
+                      >
+                        <XCircle size={14} />
+                      </button>
+                    </Tooltip>
 
                     {/* Spacer + Prev/Next */}
                     <div className="flex-1" />
                     <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          saveAllDirty();
-                          onPrev?.();
-                        }}
-                        disabled={!onPrev}
-                        className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors disabled:opacity-20 disabled:pointer-events-none"
-                        title="Previous clip"
-                      >
-                        <ChevronLeft size={16} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          saveAllDirty();
-                          onNext?.();
-                        }}
-                        disabled={!onNext}
-                        className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors disabled:opacity-20 disabled:pointer-events-none"
-                        title="Next clip"
-                      >
-                        <ChevronRight size={16} />
-                      </button>
+                      <Tooltip content="Previous clip">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            saveAllDirty();
+                            onPrev?.();
+                          }}
+                          disabled={!onPrev}
+                          className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                        >
+                          <ChevronLeft size={16} />
+                        </button>
+                      </Tooltip>
+                      <Tooltip content="Next clip">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            saveAllDirty();
+                            onNext?.();
+                          }}
+                          disabled={!onNext}
+                          className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                        >
+                          <ChevronRight size={16} />
+                        </button>
+                      </Tooltip>
                     </div>
                   </>
                 )}
@@ -886,14 +892,15 @@ export function ClipPlaybackModal({
                       placeholder="Annotation note..."
                       className="flex-1"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setPresetManagerOpen(true)}
-                      className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors"
-                      title="Manage Presets"
-                    >
-                      <Settings size={14} />
-                    </button>
+                    <Tooltip content="Manage Presets">
+                      <button
+                        type="button"
+                        onClick={() => setPresetManagerOpen(true)}
+                        className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors"
+                      >
+                        <Settings size={14} />
+                      </button>
+                    </Tooltip>
                   </div>
 
                   {/* Preset chips */}
@@ -1013,39 +1020,41 @@ export function ClipPlaybackModal({
                                 style={{ backgroundColor: mark.color }}
                               />
                               {mark.tool}
-                              <button
-                                type="button"
-                                className="ml-0.5 text-[var(--color-text-muted)] hover:text-[var(--color-action-danger)] transition-colors"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteMark(entry.frameNumber, idx);
-                                  setHighlightedMark(null);
-                                }}
-                                onMouseEnter={() =>
-                                  setHighlightedMark({
-                                    frameNumber: entry.frameNumber,
-                                    markIndex: idx,
-                                  })
-                                }
-                                onMouseLeave={() => setHighlightedMark(null)}
-                                title={`Delete this ${mark.tool} mark`}
-                              >
-                                <X size={10} />
-                              </button>
+                              <Tooltip content={`Delete this ${mark.tool} mark`}>
+                                <button
+                                  type="button"
+                                  className="ml-0.5 text-[var(--color-text-muted)] hover:text-[var(--color-action-danger)] transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteMark(entry.frameNumber, idx);
+                                    setHighlightedMark(null);
+                                  }}
+                                  onMouseEnter={() =>
+                                    setHighlightedMark({
+                                      frameNumber: entry.frameNumber,
+                                      markIndex: idx,
+                                    })
+                                  }
+                                  onMouseLeave={() => setHighlightedMark(null)}
+                                >
+                                  <X size={10} />
+                                </button>
+                              </Tooltip>
                             </span>
                           ))}
                         </div>
                       )}
                     </div>
-                    <button
-                      type="button"
-                      className="rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-action-danger)] hover:bg-[var(--color-surface-secondary)] transition-colors self-start"
-                      onClick={() => handleDeleteFrameAnnotation(entry.frameNumber)}
-                      title={`Delete all annotations on frame ${entry.frameNumber}`}
-                      aria-label={`Delete frame ${entry.frameNumber} annotations`}
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    <Tooltip content={`Delete all annotations on frame ${entry.frameNumber}`}>
+                      <button
+                        type="button"
+                        className="rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-action-danger)] hover:bg-[var(--color-surface-secondary)] transition-colors self-start"
+                        onClick={() => handleDeleteFrameAnnotation(entry.frameNumber)}
+                        aria-label={`Delete frame ${entry.frameNumber} annotations`}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </Tooltip>
                   </div>
                 ))}
               </div>

@@ -5,7 +5,7 @@
  * remove, and reorder slots.
  */
 
-import { Button, Checkbox, Input } from "@/components/primitives";
+import { Button, Checkbox, Input, Tooltip } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import { Plus, Trash2 } from "@/tokens/icons";
 import { ICON_ACTION_BTN_DANGER, TERMINAL_DIVIDER, TERMINAL_LABEL } from "@/lib/ui-classes";
@@ -73,14 +73,15 @@ export function SeedSlotEditor({ slots, onChange }: SeedSlotEditorProps) {
               onChange={(e) => handleUpdate(index, { description: e.target.value })}
             />
           </div>
-          <button
-            type="button"
-            onClick={() => handleRemove(index)}
-            className={cn("mt-6", ICON_ACTION_BTN_DANGER)}
-            title="Remove slot"
-          >
-            <Trash2 size={14} />
-          </button>
+          <Tooltip content="Remove slot">
+            <button
+              type="button"
+              onClick={() => handleRemove(index)}
+              className={cn("mt-6", ICON_ACTION_BTN_DANGER)}
+            >
+              <Trash2 size={14} />
+            </button>
+          </Tooltip>
         </div>
       ))}
     </Stack>

@@ -9,6 +9,7 @@
 import { useState } from "react";
 
 import { Badge } from "@/components";
+import { Tooltip } from "@/components/primitives";
 
 import type { TestShot, TestShotStatus } from "./types";
 import { TEST_SHOT_STATUS_LABELS, testShotStatusVariant } from "./types";
@@ -207,9 +208,11 @@ function TestShotCard({
           {shot.duration_secs != null && (
             <p>Duration: {shot.duration_secs.toFixed(1)}s</p>
           )}
-          <p title={JSON.stringify(shot.parameters, null, 2)}>
-            Params: {Object.keys(shot.parameters).length} keys
-          </p>
+          <Tooltip content={JSON.stringify(shot.parameters, null, 2)}>
+            <p>
+              Params: {Object.keys(shot.parameters).length} keys
+            </p>
+          </Tooltip>
         </div>
 
         {/* Actions */}

@@ -5,6 +5,7 @@
  * scene labels on rows and columns.
  */
 
+import { Tooltip } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { formatPercent } from "@/lib/format";
 
@@ -67,9 +68,10 @@ export function ConsistencyHeatmap({ scores, overallScore }: ConsistencyHeatmapP
                   <th
                     key={label}
                     className="p-1 text-center text-[var(--color-text-muted)] font-normal max-w-[80px] truncate"
-                    title={label}
                   >
-                    {label}
+                    <Tooltip content={label}>
+                      <span className="truncate">{label}</span>
+                    </Tooltip>
                   </th>
                 ))}
               </tr>
@@ -77,11 +79,10 @@ export function ConsistencyHeatmap({ scores, overallScore }: ConsistencyHeatmapP
             <tbody>
               {matrix.map((row, rowIdx) => (
                 <tr key={scene_labels[rowIdx]}>
-                  <td
-                    className="p-1 pr-2 text-right text-[var(--color-text-muted)] font-normal max-w-[80px] truncate"
-                    title={scene_labels[rowIdx]}
-                  >
-                    {scene_labels[rowIdx]}
+                  <td className="p-1 pr-2 text-right text-[var(--color-text-muted)] font-normal max-w-[80px] truncate">
+                    <Tooltip content={scene_labels[rowIdx] ?? ""}>
+                      <span className="truncate">{scene_labels[rowIdx]}</span>
+                    </Tooltip>
                   </td>
                   {row.map((score, colIdx) => (
                     <td
@@ -93,18 +94,19 @@ export function ConsistencyHeatmap({ scores, overallScore }: ConsistencyHeatmapP
                           ? "bg-[var(--color-surface-tertiary)] text-[var(--color-text-muted)]"
                           : consistencyCellBg(score),
                       )}
-                      title={`${scene_labels[rowIdx]} vs ${scene_labels[colIdx]}: ${formatPercent(score)}`}
                     >
-                      <span
-                        className={cn(
-                          "text-[10px] font-medium",
-                          rowIdx === colIdx
-                            ? "text-[var(--color-text-muted)]"
-                            : consistencyColor(score),
-                        )}
-                      >
-                        {Math.round(score * 100)}
-                      </span>
+                      <Tooltip content={`${scene_labels[rowIdx]} vs ${scene_labels[colIdx]}: ${formatPercent(score)}`}>
+                        <span
+                          className={cn(
+                            "text-[10px] font-medium",
+                            rowIdx === colIdx
+                              ? "text-[var(--color-text-muted)]"
+                              : consistencyColor(score),
+                          )}
+                        >
+                          {Math.round(score * 100)}
+                        </span>
+                      </Tooltip>
                     </td>
                   ))}
                 </tr>

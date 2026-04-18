@@ -3,6 +3,7 @@ import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { CHIP_CONTAINER } from "@/lib/ui-classes";
 import { Chip } from "@/components/primitives/Chip";
+import { Tooltip } from "@/components/primitives";
 import { Settings } from "@/tokens/icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LabelManagerModal } from "./LabelManagerModal";
@@ -179,14 +180,15 @@ export function TagInput({
             "outline-none border-none p-0",
           )}
         />
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); setManagerOpen(true); }}
-          className="shrink-0 p-0.5 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
-          title="Manage labels"
-        >
-          <Settings size={12} />
-        </button>
+        <Tooltip content="Manage labels">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setManagerOpen(true); }}
+            className="shrink-0 p-0.5 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+          >
+            <Settings size={12} />
+          </button>
+        </Tooltip>
       </div>
 
       {/* Quick labels — popular tags for one-click add */}

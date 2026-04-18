@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 
-import { Badge, Input } from "@/components/primitives";
+import { Badge, Input, Tooltip } from "@/components/primitives";
 import { Plus, Trash2 } from "@/tokens/icons";
 
 import {
@@ -142,14 +142,15 @@ export function PlacementRulesAdmin() {
                     </Badge>
                   </td>
                   <td className="py-[var(--spacing-2)]">
-                    <button
-                      type="button"
-                      onClick={() => deleteRule.mutate(rule.id)}
-                      className="rounded-[var(--radius-sm)] p-[var(--spacing-1)] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors"
-                      title="Delete rule"
-                    >
-                      <Trash2 size={14} aria-hidden />
-                    </button>
+                    <Tooltip content="Delete rule">
+                      <button
+                        type="button"
+                        onClick={() => deleteRule.mutate(rule.id)}
+                        className="rounded-[var(--radius-sm)] p-[var(--spacing-1)] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors"
+                      >
+                        <Trash2 size={14} aria-hidden />
+                      </button>
+                    </Tooltip>
                   </td>
                 </tr>
               ))}

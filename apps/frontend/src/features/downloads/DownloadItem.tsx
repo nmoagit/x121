@@ -3,7 +3,7 @@
  * and action buttons (PRD-104).
  */
 
-import { Badge } from "@/components/primitives";
+import { Badge, Tooltip } from "@/components/primitives";
 import { estimateEta, formatBytes, formatSpeed } from "@/lib/format";
 import { Pause, Play, RefreshCw, X } from "@/tokens/icons";
 
@@ -87,44 +87,48 @@ export function DownloadItem({ download, onPause, onResume, onCancel, onRetry }:
         {/* Action buttons */}
         <div className="flex items-center gap-[var(--spacing-1)]">
           {canPause && onPause && (
-            <button
-              type="button"
-              onClick={() => onPause(download.id)}
-              className="rounded-[var(--radius-sm)] p-[var(--spacing-1)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)] transition-colors"
-              title="Pause"
-            >
-              <Pause size={14} aria-hidden />
-            </button>
+            <Tooltip content="Pause">
+              <button
+                type="button"
+                onClick={() => onPause(download.id)}
+                className="rounded-[var(--radius-sm)] p-[var(--spacing-1)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)] transition-colors"
+              >
+                <Pause size={14} aria-hidden />
+              </button>
+            </Tooltip>
           )}
           {canResume && onResume && (
-            <button
-              type="button"
-              onClick={() => onResume(download.id)}
-              className="rounded-[var(--radius-sm)] p-[var(--spacing-1)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)] transition-colors"
-              title="Resume"
-            >
-              <Play size={14} aria-hidden />
-            </button>
+            <Tooltip content="Resume">
+              <button
+                type="button"
+                onClick={() => onResume(download.id)}
+                className="rounded-[var(--radius-sm)] p-[var(--spacing-1)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)] transition-colors"
+              >
+                <Play size={14} aria-hidden />
+              </button>
+            </Tooltip>
           )}
           {canRetry && onRetry && (
-            <button
-              type="button"
-              onClick={() => onRetry(download.id)}
-              className="rounded-[var(--radius-sm)] p-[var(--spacing-1)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)] transition-colors"
-              title="Retry"
-            >
-              <RefreshCw size={14} aria-hidden />
-            </button>
+            <Tooltip content="Retry">
+              <button
+                type="button"
+                onClick={() => onRetry(download.id)}
+                className="rounded-[var(--radius-sm)] p-[var(--spacing-1)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)] transition-colors"
+              >
+                <RefreshCw size={14} aria-hidden />
+              </button>
+            </Tooltip>
           )}
           {canCancel && onCancel && (
-            <button
-              type="button"
-              onClick={() => onCancel(download.id)}
-              className="rounded-[var(--radius-sm)] p-[var(--spacing-1)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-danger)] transition-colors"
-              title="Cancel"
-            >
-              <X size={14} aria-hidden />
-            </button>
+            <Tooltip content="Cancel">
+              <button
+                type="button"
+                onClick={() => onCancel(download.id)}
+                className="rounded-[var(--radius-sm)] p-[var(--spacing-1)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-danger)] transition-colors"
+              >
+                <X size={14} aria-hidden />
+              </button>
+            </Tooltip>
           )}
         </div>
       </div>

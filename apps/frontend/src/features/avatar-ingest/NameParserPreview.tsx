@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 
-import { Badge } from "@/components/primitives";
+import { Badge, Tooltip } from "@/components/primitives";
 import { ArrowRight } from "@/tokens/icons";
 import { CONFIDENCE_LABEL, CONFIDENCE_VARIANT } from "./types";
 import type { NameConfidence } from "./types";
@@ -62,13 +62,14 @@ export function NameParserPreview({
           autoFocus
         />
       ) : (
-        <button
-          className="cursor-pointer rounded px-1 font-medium hover:bg-muted"
-          onClick={() => setIsEditing(true)}
-          title="Click to edit"
-        >
-          {parsed}
-        </button>
+        <Tooltip content="Click to edit">
+          <button
+            className="cursor-pointer rounded px-1 font-medium hover:bg-muted"
+            onClick={() => setIsEditing(true)}
+          >
+            {parsed}
+          </button>
+        </Tooltip>
       )}
 
       <Badge variant={CONFIDENCE_VARIANT[confidence]}>

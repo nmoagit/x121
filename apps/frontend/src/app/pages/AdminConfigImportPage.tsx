@@ -9,7 +9,7 @@
 import { useCallback, useState } from "react";
 
 import { PageHeader, Stack } from "@/components/layout";
-import { Badge, Button } from "@/components/primitives";
+import { Badge, Button, Tooltip } from "@/components/primitives";
 import { Upload, X, CircleCheck, AlertTriangle } from "@/tokens/icons";
 import {
   CONFIG_TYPE_LABELS,
@@ -454,12 +454,11 @@ export function AdminConfigImportPage() {
                           </span>
                         )}
                         {cfg.status === "error" && (
-                          <span
-                            className="inline-flex items-center gap-1 text-xs text-[var(--color-action-danger)]"
-                            title={cfg.error}
-                          >
-                            <AlertTriangle size={12} /> Error
-                          </span>
+                          <Tooltip content={cfg.error ?? "Error"}>
+                            <span className="inline-flex items-center gap-1 text-xs text-[var(--color-action-danger)]">
+                              <AlertTriangle size={12} /> Error
+                            </span>
+                          </Tooltip>
                         )}
                       </td>
                       <td className="px-3 py-1.5 text-center">

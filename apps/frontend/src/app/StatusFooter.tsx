@@ -9,6 +9,7 @@
  * (state persisted to localStorage).
  */
 
+import { Tooltip } from "@/components/primitives";
 import { useActivityConsoleStore } from "@/features/activity-console";
 import { ChevronDown, Terminal } from "@/tokens/icons";
 
@@ -36,19 +37,20 @@ export function StatusFooter() {
     >
       {/* Left: console toggle + system status segments */}
       <div className="flex items-center gap-0">
-        <button
-          type="button"
-          onClick={toggleConsole}
-          className={`flex items-center gap-1 rounded-[var(--radius-sm)] px-1.5 py-0.5 text-xs transition-colors duration-150 hover:bg-[var(--color-surface-tertiary)] ${
-            consoleOpen
-              ? "text-[var(--color-action-primary)]"
-              : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-          }`}
-          title={consoleOpen ? "Close activity console" : "Open activity console"}
-        >
-          <Terminal size={12} />
-          <span>Console</span>
-        </button>
+        <Tooltip content={consoleOpen ? "Close activity console" : "Open activity console"}>
+          <button
+            type="button"
+            onClick={toggleConsole}
+            className={`flex items-center gap-1 rounded-[var(--radius-sm)] px-1.5 py-0.5 text-xs transition-colors duration-150 hover:bg-[var(--color-surface-tertiary)] ${
+              consoleOpen
+                ? "text-[var(--color-action-primary)]"
+                : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+            }`}
+          >
+            <Terminal size={12} />
+            <span>Console</span>
+          </button>
+        </Tooltip>
         {status.isAdmin && <ServiceHealthSegment services={status.services} />}
         {status.isAdmin && <CloudGpuSegment cloudGpu={status.cloudGpu} />}
       </div>

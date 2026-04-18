@@ -10,7 +10,7 @@
 
 import { useCallback, useState } from "react";
 
-import { Button, TabBar } from "@/components/primitives";
+import { Button, TabBar, Tooltip } from "@/components/primitives";
 import { Modal } from "@/components/composite/Modal";
 import { Stack } from "@/components/layout";
 import { TERMINAL_STATUS_COLORS, TERMINAL_TH, TERMINAL_DIVIDER, TERMINAL_ROW_HOVER, TRACK_TEXT_COLORS } from "@/lib/ui-classes";
@@ -433,15 +433,16 @@ export function WorkflowDetailPanel({ workflow }: WorkflowDetailPanelProps) {
         {activeTab === "canvas" && (
           <div className="relative h-full min-h-[460px]">
             <WorkflowCanvas workflowJson={workflow.json_content} />
-            <button
-              type="button"
-              onClick={() => setCanvasFullscreen(true)}
-              className="absolute top-2 left-2 z-10 rounded px-2 py-1 text-xs font-medium"
-              style={{ background: "var(--color-surface-secondary)", color: "var(--color-text-secondary)", border: "1px solid var(--color-border-default)" }}
-              title="Expand canvas"
-            >
-              <Maximize2 size={14} />
-            </button>
+            <Tooltip content="Expand canvas">
+              <button
+                type="button"
+                onClick={() => setCanvasFullscreen(true)}
+                className="absolute top-2 left-2 z-10 rounded px-2 py-1 text-xs font-medium"
+                style={{ background: "var(--color-surface-secondary)", color: "var(--color-text-secondary)", border: "1px solid var(--color-border-default)" }}
+              >
+                <Maximize2 size={14} />
+              </button>
+            </Tooltip>
           </div>
         )}
         {activeTab === "json" && <JsonTab workflow={workflow} />}

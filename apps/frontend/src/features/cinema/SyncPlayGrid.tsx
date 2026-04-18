@@ -8,6 +8,7 @@
 
 import { useCallback, useMemo, useRef, useState } from "react";
 
+import { Tooltip } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { Layout } from "@/tokens/icons";
 
@@ -125,21 +126,21 @@ export function SyncPlayGrid({
       <div className="flex items-center gap-[var(--spacing-2)] px-[var(--spacing-2)] py-[var(--spacing-1)]">
         <Layout size={16} className="text-[var(--color-text-muted)]" />
         {LAYOUT_OPTIONS.map((opt) => (
-          <button
-            key={opt}
-            type="button"
-            onClick={() => onLayoutChange?.(opt)}
-            className={cn(
-              "px-[var(--spacing-2)] py-0.5 text-xs rounded-[var(--radius-sm)]",
-              "transition-colors duration-[var(--duration-fast)]",
-              layout === opt
-                ? "bg-[var(--color-action-primary)] text-[var(--color-text-inverse)]"
-                : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-tertiary)]",
-            )}
-            title={LAYOUT_LABELS[opt]}
-          >
-            {opt}
-          </button>
+          <Tooltip key={opt} content={LAYOUT_LABELS[opt]}>
+            <button
+              type="button"
+              onClick={() => onLayoutChange?.(opt)}
+              className={cn(
+                "px-[var(--spacing-2)] py-0.5 text-xs rounded-[var(--radius-sm)]",
+                "transition-colors duration-[var(--duration-fast)]",
+                layout === opt
+                  ? "bg-[var(--color-action-primary)] text-[var(--color-text-inverse)]"
+                  : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-tertiary)]",
+              )}
+            >
+              {opt}
+            </button>
+          </Tooltip>
         ))}
       </div>
 

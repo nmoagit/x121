@@ -7,7 +7,14 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
-import { EmptyState, BulkActionBar, BulkRejectDialog, BulkLabelDialog, ExportStatusPanel, ScanInputDialog } from "@/components/domain";
+import {
+  EmptyState,
+  BulkActionBar,
+  BulkRejectDialog,
+  BulkLabelDialog,
+  ExportStatusPanel,
+  ScanInputDialog,
+} from "@/components/domain";
 import { ImportConfirmModal } from "@/features/projects/components/ImportConfirmModal";
 import { useScanImportFlow } from "@/hooks/useScanImportFlow";
 import { useProjectAvatars } from "@/features/projects/hooks/use-project-avatars";
@@ -19,7 +26,16 @@ import type { TagInfo } from "@/components/domain/TagChip";
 import { Modal } from "@/components/composite";
 import { api } from "@/lib/api";
 import { PageHeader, Stack } from "@/components/layout";
-import { Button, Checkbox, MultiFilterBar, Pagination, SearchInput, Toggle, ContextLoader } from "@/components/primitives";
+import {
+  Button,
+  Checkbox,
+  MultiFilterBar,
+  Pagination,
+  SearchInput,
+  Toggle,
+  Tooltip,
+  ContextLoader,
+} from "@/components/primitives";
 import type { FilterConfig, FilterOption } from "@/components/primitives";
 import { ProgressiveImage } from "@/components/primitives";
 import { useBulkSelection } from "@/hooks/useBulkSelection";
@@ -45,7 +61,20 @@ import { TERMINAL_STATUS_COLORS, TRACK_TEXT_COLORS } from "@/lib/ui-classes";
 import { toSelectOptions } from "@/lib/select-utils";
 import { usePipelineContextSafe } from "@/features/pipelines";
 import { useProjects } from "@/features/projects/hooks/use-projects";
-import { Check, CheckCircle, ChevronLeft, ChevronRight, Download, FolderSearch, Image as ImageIcon, LayoutGrid, List, Maximize2, Minimize2, XCircle } from "@/tokens/icons";
+import {
+  Check,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  FolderSearch,
+  Image as ImageIcon,
+  LayoutGrid,
+  List,
+  Maximize2,
+  Minimize2,
+  XCircle,
+} from "@/tokens/icons";
 import { TYPO_DATA } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
@@ -72,7 +101,9 @@ function BrowseVariantItem({
   const statusId = variant.status_id as MediaVariantStatusId;
 
   return (
-    <div className={`rounded-[var(--radius-lg)] border border-[var(--color-border-default)] transition-colors bg-[var(--color-surface-primary)] hover:bg-[var(--color-surface-secondary)] ${selected ? "ring-2 ring-blue-500/50" : ""} ${!variant.avatar_is_enabled ? "opacity-70 grayscale" : ""}`}>
+    <div
+      className={`rounded-[var(--radius-lg)] border border-[var(--color-border-default)] transition-colors bg-[var(--color-surface-primary)] hover:bg-[var(--color-surface-secondary)] ${selected ? "ring-2 ring-blue-500/50" : ""} ${!variant.avatar_is_enabled ? "opacity-70 grayscale" : ""}`}
+    >
       <div className="flex items-center gap-3 p-3">
         {/* Selection checkbox */}
         <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
@@ -83,7 +114,13 @@ function BrowseVariantItem({
         <button
           type="button"
           onClick={onPreview}
-          className="group/preview relative h-14 w-14 shrink-0 rounded overflow-hidden bg-[var(--color-surface-secondary)] cursor-pointer"
+          className={`group/preview relative h-14 w-14 shrink-0 rounded overflow-hidden bg-[var(--color-surface-secondary)] cursor-pointer border-2 ${
+            variant.status_id === 2
+              ? "border-green-500"
+              : variant.status_id === 3
+                ? "border-red-500"
+                : "border-transparent"
+          }`}
         >
           {variant.file_path ? (
             <ProgressiveImage
@@ -116,25 +153,47 @@ function BrowseVariantItem({
               {variant.avatar_name}
             </span>
             {variant.variant_type && (
-              <span className={TRACK_TEXT_COLORS[variant.variant_type] ?? "text-[var(--color-text-muted)]"}>
+              <span
+                className={
+                  TRACK_TEXT_COLORS[variant.variant_type] ?? "text-[var(--color-text-muted)]"
+                }
+              >
                 {variant.variant_type}
               </span>
             )}
             {variant.is_hero && <span className="text-[var(--color-data-green)]">hero</span>}
           </div>
           <div className="flex items-center gap-2 text-[10px] text-[var(--color-text-muted)]">
-            <span className={TERMINAL_STATUS_COLORS[(MEDIA_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()] ?? "text-[var(--color-data-cyan)]"}>
+            <span
+              className={
+                TERMINAL_STATUS_COLORS[
+                  (MEDIA_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()
+                ] ?? "text-[var(--color-data-cyan)]"
+              }
+            >
               {(MEDIA_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()}
             </span>
             <span className="opacity-30">|</span>
-            <span>{(PROVENANCE_LABEL[variant.provenance as Provenance] ?? variant.provenance).toLowerCase()}</span>
+            <span>
+              {(
+                PROVENANCE_LABEL[variant.provenance as Provenance] ?? variant.provenance
+              ).toLowerCase()}
+            </span>
             <span className="opacity-30">|</span>
             <span>v{variant.version}</span>
             {variant.width && variant.height && (
-              <><span className="opacity-30">|</span><span>{variant.width}x{variant.height}</span></>
+              <>
+                <span className="opacity-30">|</span>
+                <span>
+                  {variant.width}x{variant.height}
+                </span>
+              </>
             )}
             {variant.file_size_bytes != null && (
-              <><span className="opacity-30">|</span><span>{formatBytes(variant.file_size_bytes)}</span></>
+              <>
+                <span className="opacity-30">|</span>
+                <span>{formatBytes(variant.file_size_bytes)}</span>
+              </>
             )}
             <span className="opacity-30">|</span>
             <span>{variant.project_name}</span>
@@ -145,22 +204,24 @@ function BrowseVariantItem({
 
         {/* Approve / Reject */}
         <div className="flex items-center gap-1 shrink-0">
-          <button
-            type="button"
-            onClick={onApprove}
-            className={`p-1 rounded transition-colors ${variant.status_id === 2 ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-green)]"}`}
-            title={variant.status_id === 2 ? "Approved" : "Approve"}
-          >
-            <CheckCircle size={16} />
-          </button>
-          <button
-            type="button"
-            onClick={onReject}
-            className={`p-1 rounded transition-colors ${variant.status_id === 3 ? "text-[var(--color-data-red)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-red)]"}`}
-            title={variant.status_id === 3 ? "Rejected" : "Reject"}
-          >
-            <XCircle size={16} />
-          </button>
+          <Tooltip content={variant.status_id === 2 ? "Approved" : "Approve"}>
+            <button
+              type="button"
+              onClick={onApprove}
+              className={`p-1 rounded transition-colors ${variant.status_id === 2 ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-green)]"}`}
+            >
+              <CheckCircle size={16} />
+            </button>
+          </Tooltip>
+          <Tooltip content={variant.status_id === 3 ? "Rejected" : "Reject"}>
+            <button
+              type="button"
+              onClick={onReject}
+              className={`p-1 rounded transition-colors ${variant.status_id === 3 ? "text-[var(--color-data-red)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-red)]"}`}
+            >
+              <XCircle size={16} />
+            </button>
+          </Tooltip>
         </div>
       </div>
     </div>
@@ -191,7 +252,9 @@ function BrowseVariantCard({
   const statusId = variant.status_id as MediaVariantStatusId;
 
   return (
-    <div className={`relative rounded-[var(--radius-lg)] border border-[var(--color-border-default)] overflow-hidden transition-colors bg-[var(--color-surface-primary)] hover:bg-[var(--color-surface-secondary)] ${selected ? "ring-2 ring-blue-500/50" : ""} ${!variant.avatar_is_enabled ? "opacity-70 grayscale" : ""}`}>
+    <div
+      className={`relative rounded-[var(--radius-lg)] border border-[var(--color-border-default)] overflow-hidden transition-colors bg-[var(--color-surface-primary)] hover:bg-[var(--color-surface-secondary)] ${selected ? "ring-2 ring-blue-500/50" : ""} ${!variant.avatar_is_enabled ? "opacity-70 grayscale" : ""}`}
+    >
       {/* Selection checkbox overlay */}
       <div
         className="absolute top-1 left-1 z-10 rounded bg-[var(--color-surface-badge-overlay)] p-0.5"
@@ -204,7 +267,13 @@ function BrowseVariantCard({
       <button
         type="button"
         onClick={onPreview}
-        className="relative aspect-square w-full cursor-pointer bg-[var(--color-surface-secondary)]"
+        className={`relative aspect-square w-full cursor-pointer bg-[var(--color-surface-secondary)] border-2 ${
+          variant.status_id === 2
+            ? "border-green-500"
+            : variant.status_id === 3
+              ? "border-red-500"
+              : "border-transparent"
+        }`}
       >
         {variant.file_path ? (
           <ProgressiveImage
@@ -234,15 +303,25 @@ function BrowseVariantCard({
           className="min-w-0 flex-1 text-left cursor-pointer"
         >
           <div className={`flex items-center gap-1.5 ${TYPO_DATA}`}>
-            <span className="truncate font-medium text-[var(--color-text-primary)]">{variant.avatar_name}</span>
+            <span className="truncate font-medium text-[var(--color-text-primary)]">
+              {variant.avatar_name}
+            </span>
             {variant.variant_type && (
-              <span className={`shrink-0 text-[10px] ${TRACK_TEXT_COLORS[variant.variant_type] ?? "text-[var(--color-text-muted)]"}`}>
+              <span
+                className={`shrink-0 text-[10px] ${TRACK_TEXT_COLORS[variant.variant_type] ?? "text-[var(--color-text-muted)]"}`}
+              >
                 {variant.variant_type}
               </span>
             )}
           </div>
           <div className="flex items-center gap-1.5 font-mono text-[10px] text-[var(--color-text-muted)] mt-0.5">
-            <span className={TERMINAL_STATUS_COLORS[(MEDIA_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()] ?? "text-[var(--color-data-cyan)]"}>
+            <span
+              className={
+                TERMINAL_STATUS_COLORS[
+                  (MEDIA_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()
+                ] ?? "text-[var(--color-data-cyan)]"
+              }
+            >
               {(MEDIA_VARIANT_STATUS_LABEL[statusId] ?? "unknown").toLowerCase()}
             </span>
             <span>v{variant.version}</span>
@@ -250,12 +329,24 @@ function BrowseVariantCard({
           </div>
         </button>
         <div className="flex flex-col gap-0.5 shrink-0">
-          <button type="button" onClick={onApprove} className={`p-0.5 rounded transition-colors ${variant.status_id === 2 ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-green)]"}`} title="Approve">
-            <CheckCircle size={14} />
-          </button>
-          <button type="button" onClick={onReject} className={`p-0.5 rounded transition-colors ${variant.status_id === 3 ? "text-[var(--color-data-red)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-red)]"}`} title="Reject">
-            <XCircle size={14} />
-          </button>
+          <Tooltip content="Approve">
+            <button
+              type="button"
+              onClick={onApprove}
+              className={`p-0.5 rounded transition-colors ${variant.status_id === 2 ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-green)]"}`}
+            >
+              <CheckCircle size={14} />
+            </button>
+          </Tooltip>
+          <Tooltip content="Reject">
+            <button
+              type="button"
+              onClick={onReject}
+              className={`p-0.5 rounded transition-colors ${variant.status_id === 3 ? "text-[var(--color-data-red)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-red)]"}`}
+            >
+              <XCircle size={14} />
+            </button>
+          </Tooltip>
         </div>
       </div>
     </div>
@@ -289,7 +380,9 @@ const MEDIA_KIND_OPTIONS: FilterOption[] = [
 
 function buildVariantTypeOptions(items: MediaVariantBrowseItem[] | undefined): FilterOption[] {
   if (!items) return [];
-  const types = [...new Set(items.map((v) => v.variant_type).filter((t): t is string => t != null))].sort();
+  const types = [
+    ...new Set(items.map((v) => v.variant_type).filter((t): t is string => t != null)),
+  ].sort();
   return types.map((t) => ({ value: t, label: t }));
 }
 
@@ -325,14 +418,38 @@ export function MediaPage() {
 
   // Bulk selection — reset key serializes all filter state
   const bulkResetKey = useMemo(
-    () => JSON.stringify({ projectFilter, statusFilter, sourceFilter, variantTypeFilter, mediaKindFilter, labelFilter, excludeLabelFilter, debouncedSearch, showDisabled }),
-    [projectFilter, statusFilter, sourceFilter, variantTypeFilter, mediaKindFilter, labelFilter, excludeLabelFilter, debouncedSearch, showDisabled],
+    () =>
+      JSON.stringify({
+        projectFilter,
+        statusFilter,
+        sourceFilter,
+        variantTypeFilter,
+        mediaKindFilter,
+        labelFilter,
+        excludeLabelFilter,
+        debouncedSearch,
+        showDisabled,
+      }),
+    [
+      projectFilter,
+      statusFilter,
+      sourceFilter,
+      variantTypeFilter,
+      mediaKindFilter,
+      labelFilter,
+      excludeLabelFilter,
+      debouncedSearch,
+      showDisabled,
+    ],
   );
   const bulk = useBulkSelection(bulkResetKey);
 
   // Debounce search
   useEffect(() => {
-    const t = setTimeout(() => { setDebouncedSearch(searchInput); setPage(0); }, 300);
+    const t = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+      setPage(0);
+    }, 300);
     return () => clearTimeout(t);
   }, [searchInput]);
 
@@ -392,9 +509,10 @@ export function MediaPage() {
   }, [previewAbsIndex, pageSize, page]);
 
   const previewLocalIndex = previewAbsIndex !== null ? previewAbsIndex - pageOffset : null;
-  const previewVariantData = previewLocalIndex !== null && filteredVariants[previewLocalIndex]
-    ? filteredVariants[previewLocalIndex]
-    : null;
+  const previewVariantData =
+    previewLocalIndex !== null && filteredVariants[previewLocalIndex]
+      ? filteredVariants[previewLocalIndex]
+      : null;
 
   const approveVarMut = useBrowseApproveVariant();
   const unapproveVarMut = useBrowseUnapproveVariant();
@@ -402,18 +520,32 @@ export function MediaPage() {
   const bulkApproveMut = useBulkApproveVariants();
   const bulkRejectMut = useBulkRejectVariants();
   // Bulk operations (shared hook eliminates ~130 lines of duplication with ScenesPage)
-  const buildFilters = useCallback(() => ({
-    projectId: projectFilter.length === 1 ? Number(projectFilter[0]) : undefined,
-    pipelineId: pipelineCtx?.pipelineId,
-    statusId: statusFilter.length > 0 ? statusFilter.join(",") : undefined,
-    provenance: sourceFilter.length > 0 ? sourceFilter.join(",") : undefined,
-    variantType: variantTypeFilter.length > 0 ? variantTypeFilter.join(",") : undefined,
-    mediaKind: mediaKindFilter.length > 0 ? mediaKindFilter.join(",") : undefined,
-    showDisabled,
-    tagIds: labelFilter.length > 0 ? labelFilter.join(",") : undefined,
-    excludeTagIds: excludeLabelFilter.length > 0 ? excludeLabelFilter.join(",") : undefined,
-    search: debouncedSearch || undefined,
-  }), [projectFilter, pipelineCtx?.pipelineId, statusFilter, sourceFilter, variantTypeFilter, mediaKindFilter, showDisabled, labelFilter, excludeLabelFilter, debouncedSearch]);
+  const buildFilters = useCallback(
+    () => ({
+      projectId: projectFilter.length === 1 ? Number(projectFilter[0]) : undefined,
+      pipelineId: pipelineCtx?.pipelineId,
+      statusId: statusFilter.length > 0 ? statusFilter.join(",") : undefined,
+      provenance: sourceFilter.length > 0 ? sourceFilter.join(",") : undefined,
+      variantType: variantTypeFilter.length > 0 ? variantTypeFilter.join(",") : undefined,
+      mediaKind: mediaKindFilter.length > 0 ? mediaKindFilter.join(",") : undefined,
+      showDisabled,
+      tagIds: labelFilter.length > 0 ? labelFilter.join(",") : undefined,
+      excludeTagIds: excludeLabelFilter.length > 0 ? excludeLabelFilter.join(",") : undefined,
+      search: debouncedSearch || undefined,
+    }),
+    [
+      projectFilter,
+      pipelineCtx?.pipelineId,
+      statusFilter,
+      sourceFilter,
+      variantTypeFilter,
+      mediaKindFilter,
+      showDisabled,
+      labelFilter,
+      excludeLabelFilter,
+      debouncedSearch,
+    ],
+  );
 
   const bulkOps = useBulkOperations({
     entityType: "media_variant",
@@ -426,24 +558,88 @@ export function MediaPage() {
     pipelineId: pipelineCtx?.pipelineId,
   });
 
-  const filters: FilterConfig[] = useMemo(() => [
-    { key: "project", label: "Project", options: projectOptions, selected: projectFilter, onChange: (v: string[]) => { setProjectFilter(v); setPage(0); }, width: "w-44" },
-    { key: "status", label: "Status", options: STATUS_OPTIONS, selected: statusFilter, onChange: (v: string[]) => { setStatusFilter(v); setPage(0); } },
-    { key: "source", label: "Source", options: SOURCE_OPTIONS, selected: sourceFilter, onChange: (v: string[]) => { setSourceFilter(v); setPage(0); } },
-    { key: "type", label: "Type", options: variantTypeOptions, selected: variantTypeFilter, onChange: (v: string[]) => { setVariantTypeFilter(v); setPage(0); } },
-    { key: "mediaKind", label: "Kind", options: MEDIA_KIND_OPTIONS, selected: mediaKindFilter, onChange: (v: string[]) => { setMediaKindFilter(v); setPage(0); } },
-  ], [projectOptions, projectFilter, statusFilter, sourceFilter, variantTypeOptions, variantTypeFilter, mediaKindFilter]);
+  const filters: FilterConfig[] = useMemo(
+    () => [
+      {
+        key: "project",
+        label: "Project",
+        options: projectOptions,
+        selected: projectFilter,
+        onChange: (v: string[]) => {
+          setProjectFilter(v);
+          setPage(0);
+        },
+        width: "w-44",
+      },
+      {
+        key: "status",
+        label: "Status",
+        options: STATUS_OPTIONS,
+        selected: statusFilter,
+        onChange: (v: string[]) => {
+          setStatusFilter(v);
+          setPage(0);
+        },
+      },
+      {
+        key: "source",
+        label: "Source",
+        options: SOURCE_OPTIONS,
+        selected: sourceFilter,
+        onChange: (v: string[]) => {
+          setSourceFilter(v);
+          setPage(0);
+        },
+      },
+      {
+        key: "type",
+        label: "Type",
+        options: variantTypeOptions,
+        selected: variantTypeFilter,
+        onChange: (v: string[]) => {
+          setVariantTypeFilter(v);
+          setPage(0);
+        },
+      },
+      {
+        key: "mediaKind",
+        label: "Kind",
+        options: MEDIA_KIND_OPTIONS,
+        selected: mediaKindFilter,
+        onChange: (v: string[]) => {
+          setMediaKindFilter(v);
+          setPage(0);
+        },
+      },
+    ],
+    [
+      projectOptions,
+      projectFilter,
+      statusFilter,
+      sourceFilter,
+      variantTypeOptions,
+      variantTypeFilter,
+      mediaKindFilter,
+    ],
+  );
 
   return (
     <Stack gap={6}>
       <PageHeader
         title="Media"
         description="Browse all media variants across avatars, most recent first."
-        actions={scanAvailable ? (
-          <Button size="sm" variant="secondary" icon={<FolderSearch size={14} />} onClick={scanFlow.openScan}>
-            Scan Directory
-          </Button>
-        ) : undefined}
+        actions={
+          scanAvailable ? (
+            <Button
+              size="sm"
+              variant="secondary"
+              icon={<FolderSearch size={14} />}
+              onClick={scanFlow.openScan}
+            >
+              Scan Directory
+            </Button>
+          ) : undefined
+        }
       />
 
       {/* Search */}
@@ -460,7 +656,9 @@ export function MediaPage() {
           <Checkbox
             checked={bulk.isAllPageSelected(pageIds)}
             indeterminate={bulk.isIndeterminate(pageIds)}
-            onChange={(checked) => checked ? bulk.selectPage(pageIds) : bulk.deselectPage(pageIds)}
+            onChange={(checked) =>
+              checked ? bulk.selectPage(pageIds) : bulk.deselectPage(pageIds)
+            }
             label="Select all"
             size="sm"
           />
@@ -472,7 +670,10 @@ export function MediaPage() {
           />
           <Toggle
             checked={noTags}
-            onChange={(v) => { setNoTags(v); setPage(0); }}
+            onChange={(v) => {
+              setNoTags(v);
+              setPage(0);
+            }}
             label="No tags"
             size="sm"
           />
@@ -491,7 +692,11 @@ export function MediaPage() {
             aria-label="List view"
           />
           <span className="text-xs text-[var(--color-text-muted)]">
-            {filteredVariants.length}{variants && filteredVariants.length !== variants.length ? ` of ${variants.length}` : ""} variant{filteredVariants.length !== 1 ? "s" : ""}
+            {filteredVariants.length}
+            {variants && filteredVariants.length !== variants.length
+              ? ` of ${variants.length}`
+              : ""}{" "}
+            variant{filteredVariants.length !== 1 ? "s" : ""}
           </span>
         </div>
       </MultiFilterBar>
@@ -499,9 +704,15 @@ export function MediaPage() {
       {/* Label filter */}
       <TagFilter
         selectedTagIds={labelFilter}
-        onSelectionChange={(ids) => { setLabelFilter(ids); setPage(0); }}
+        onSelectionChange={(ids) => {
+          setLabelFilter(ids);
+          setPage(0);
+        }}
         excludedTagIds={excludeLabelFilter}
-        onExclusionChange={(ids) => { setExcludeLabelFilter(ids); setPage(0); }}
+        onExclusionChange={(ids) => {
+          setExcludeLabelFilter(ids);
+          setPage(0);
+        }}
         pipelineId={pipelineCtx?.pipelineId}
         entityType="media_variant"
       />
@@ -536,8 +747,16 @@ export function MediaPage() {
                   search: { tab: "images", scene: undefined },
                 })
               }
-              onApprove={() => variant.status_id === 2 ? unapproveVarMut.mutate({ avatarId: variant.avatar_id, id: variant.id }) : approveVarMut.mutate({ avatarId: variant.avatar_id, id: variant.id })}
-              onReject={() => variant.status_id === 3 ? unapproveVarMut.mutate({ avatarId: variant.avatar_id, id: variant.id }) : rejectVarMut.mutate({ avatarId: variant.avatar_id, id: variant.id })}
+              onApprove={() =>
+                variant.status_id === 2
+                  ? unapproveVarMut.mutate({ avatarId: variant.avatar_id, id: variant.id })
+                  : approveVarMut.mutate({ avatarId: variant.avatar_id, id: variant.id })
+              }
+              onReject={() =>
+                variant.status_id === 3
+                  ? unapproveVarMut.mutate({ avatarId: variant.avatar_id, id: variant.id })
+                  : rejectVarMut.mutate({ avatarId: variant.avatar_id, id: variant.id })
+              }
             />
           ))}
         </div>
@@ -560,8 +779,16 @@ export function MediaPage() {
                   search: { tab: "images", scene: undefined },
                 })
               }
-              onApprove={() => variant.status_id === 2 ? unapproveVarMut.mutate({ avatarId: variant.avatar_id, id: variant.id }) : approveVarMut.mutate({ avatarId: variant.avatar_id, id: variant.id })}
-              onReject={() => variant.status_id === 3 ? unapproveVarMut.mutate({ avatarId: variant.avatar_id, id: variant.id }) : rejectVarMut.mutate({ avatarId: variant.avatar_id, id: variant.id })}
+              onApprove={() =>
+                variant.status_id === 2
+                  ? unapproveVarMut.mutate({ avatarId: variant.avatar_id, id: variant.id })
+                  : approveVarMut.mutate({ avatarId: variant.avatar_id, id: variant.id })
+              }
+              onReject={() =>
+                variant.status_id === 3
+                  ? unapproveVarMut.mutate({ avatarId: variant.avatar_id, id: variant.id })
+                  : rejectVarMut.mutate({ avatarId: variant.avatar_id, id: variant.id })
+              }
             />
           ))}
         </div>
@@ -579,10 +806,44 @@ export function MediaPage() {
       <ImagePreviewModal
         variant={previewVariantData}
         onClose={() => setPreviewAbsIndex(null)}
-        onPrev={previewAbsIndex !== null && previewAbsIndex > 0 ? () => setPreviewAbsIndex(previewAbsIndex - 1) : undefined}
-        onNext={previewAbsIndex !== null && previewAbsIndex < total - 1 ? () => setPreviewAbsIndex(previewAbsIndex + 1) : undefined}
-        onApprove={previewVariantData ? () => previewVariantData.status_id === 2 ? unapproveVarMut.mutate({ avatarId: previewVariantData.avatar_id, id: previewVariantData.id }) : approveVarMut.mutate({ avatarId: previewVariantData.avatar_id, id: previewVariantData.id }) : undefined}
-        onReject={previewVariantData ? () => previewVariantData.status_id === 3 ? unapproveVarMut.mutate({ avatarId: previewVariantData.avatar_id, id: previewVariantData.id }) : rejectVarMut.mutate({ avatarId: previewVariantData.avatar_id, id: previewVariantData.id }) : undefined}
+        onPrev={
+          previewAbsIndex !== null && previewAbsIndex > 0
+            ? () => setPreviewAbsIndex(previewAbsIndex - 1)
+            : undefined
+        }
+        onNext={
+          previewAbsIndex !== null && previewAbsIndex < total - 1
+            ? () => setPreviewAbsIndex(previewAbsIndex + 1)
+            : undefined
+        }
+        onApprove={
+          previewVariantData
+            ? () =>
+                previewVariantData.status_id === 2
+                  ? unapproveVarMut.mutate({
+                      avatarId: previewVariantData.avatar_id,
+                      id: previewVariantData.id,
+                    })
+                  : approveVarMut.mutate({
+                      avatarId: previewVariantData.avatar_id,
+                      id: previewVariantData.id,
+                    })
+            : undefined
+        }
+        onReject={
+          previewVariantData
+            ? () =>
+                previewVariantData.status_id === 3
+                  ? unapproveVarMut.mutate({
+                      avatarId: previewVariantData.avatar_id,
+                      id: previewVariantData.id,
+                    })
+                  : rejectVarMut.mutate({
+                      avatarId: previewVariantData.avatar_id,
+                      id: previewVariantData.id,
+                    })
+            : undefined
+        }
         pipelineId={pipelineCtx?.pipelineId}
       />
 
@@ -647,8 +908,21 @@ export function MediaPage() {
               existingNames={scanAvatars?.map((c) => c.name) ?? []}
               avatars={scanAvatars ?? []}
               onConfirm={() => {}}
-              onConfirmWithAssets={(newPayloads, existingPayloads, groupId, overwrite, skipExisting) =>
-                scanFlow.handleConfirm(newPayloads, existingPayloads, groupId, overwrite, skipExisting, true)
+              onConfirmWithAssets={(
+                newPayloads,
+                existingPayloads,
+                groupId,
+                overwrite,
+                skipExisting,
+              ) =>
+                scanFlow.handleConfirm(
+                  newPayloads,
+                  existingPayloads,
+                  groupId,
+                  overwrite,
+                  skipExisting,
+                  true,
+                )
               }
               loading={scanFlow.isImporting}
               importProgress={scanFlow.importProgress}
@@ -660,7 +934,6 @@ export function MediaPage() {
           )}
         </>
       )}
-
     </Stack>
   );
 }
@@ -693,9 +966,14 @@ function ImagePreviewModal({
 
   // Load tags + notes when variant changes
   useEffect(() => {
-    if (!variant) { setVariantTags([]); setVariantNotes(""); return; }
+    if (!variant) {
+      setVariantTags([]);
+      setVariantNotes("");
+      return;
+    }
     setVariantNotes(variant.notes ?? "");
-    api.get<TagInfo[]>(`/entities/media_variant/${variant.id}/tags`)
+    api
+      .get<TagInfo[]>(`/entities/media_variant/${variant.id}/tags`)
       .then(setVariantTags)
       .catch(() => setVariantTags([]));
   }, [variant?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -703,8 +981,14 @@ function ImagePreviewModal({
   useEffect(() => {
     if (!variant) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft" && onPrev) { e.preventDefault(); onPrev(); }
-      if (e.key === "ArrowRight" && onNext) { e.preventDefault(); onNext(); }
+      if (e.key === "ArrowLeft" && onPrev) {
+        e.preventDefault();
+        onPrev();
+      }
+      if (e.key === "ArrowRight" && onNext) {
+        e.preventDefault();
+        onNext();
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -714,7 +998,9 @@ function ImagePreviewModal({
     <Modal
       open={variant !== null}
       onClose={onClose}
-      title={variant ? `${variant.project_name} / ${variant.avatar_name} — ${variant.variant_label}` : ""}
+      title={
+        variant ? `${variant.project_name} / ${variant.avatar_name} — ${variant.variant_label}` : ""
+      }
       size={expanded ? "full" : "3xl"}
     >
       {variant && (
@@ -735,100 +1021,137 @@ function ImagePreviewModal({
               )}
             </div>
             {/* Expand toggle — overlays top-right of image */}
-            <button
-              type="button"
-              className="absolute top-2 right-2 p-1 rounded bg-[var(--color-surface-badge-overlay)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] opacity-0 group-hover/img:opacity-100 transition-opacity"
-              onClick={() => setExpanded((v) => !v)}
-              title={expanded ? "Compact" : "Expand"}
-            >
-              {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-            </button>
+            <Tooltip content={expanded ? "Compact" : "Expand"}>
+              <button
+                type="button"
+                className="absolute top-2 right-2 p-1 rounded bg-[var(--color-surface-badge-overlay)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] opacity-0 group-hover/img:opacity-100 transition-opacity"
+                onClick={() => setExpanded((v) => !v)}
+              >
+                {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+              </button>
+            </Tooltip>
           </div>
 
           {/* Metadata row */}
           <div className="flex items-center gap-2 font-mono text-[10px] text-[var(--color-text-muted)]">
-            <span className={TERMINAL_STATUS_COLORS[(MEDIA_VARIANT_STATUS_LABEL[variant.status_id as MediaVariantStatusId] ?? "unknown").toLowerCase()] ?? "text-[var(--color-data-cyan)]"}>
-              {(MEDIA_VARIANT_STATUS_LABEL[variant.status_id as MediaVariantStatusId] ?? "unknown").toLowerCase()}
+            <span
+              className={
+                TERMINAL_STATUS_COLORS[
+                  (
+                    MEDIA_VARIANT_STATUS_LABEL[variant.status_id as MediaVariantStatusId] ??
+                    "unknown"
+                  ).toLowerCase()
+                ] ?? "text-[var(--color-data-cyan)]"
+              }
+            >
+              {(
+                MEDIA_VARIANT_STATUS_LABEL[variant.status_id as MediaVariantStatusId] ?? "unknown"
+              ).toLowerCase()}
             </span>
             <span className="opacity-30">|</span>
-            <span>{(PROVENANCE_LABEL[variant.provenance as Provenance] ?? variant.provenance).toLowerCase()}</span>
+            <span>
+              {(
+                PROVENANCE_LABEL[variant.provenance as Provenance] ?? variant.provenance
+              ).toLowerCase()}
+            </span>
             {variant.width && variant.height && (
-              <><span className="opacity-30">|</span><span>{variant.width}x{variant.height}</span></>
+              <>
+                <span className="opacity-30">|</span>
+                <span>
+                  {variant.width}x{variant.height}
+                </span>
+              </>
             )}
             {variant.format && (
-              <><span className="opacity-30">|</span><span>{variant.format.toUpperCase()}</span></>
+              <>
+                <span className="opacity-30">|</span>
+                <span>{variant.format.toUpperCase()}</span>
+              </>
             )}
             <span className="opacity-30">|</span>
             <span>v{variant.version}</span>
             {variant.is_hero && (
-              <><span className="opacity-30">|</span><span className="text-[var(--color-data-green)]">hero</span></>
+              <>
+                <span className="opacity-30">|</span>
+                <span className="text-[var(--color-data-green)]">hero</span>
+              </>
             )}
             <span className="opacity-30">|</span>
-            <span>{variant.avatar_name} · {variant.project_name}</span>
+            <span>
+              {variant.avatar_name} · {variant.project_name}
+            </span>
           </div>
 
           {/* Toolbar: download, approve/reject, spacer, prev/next */}
           <div className="flex items-center gap-[var(--spacing-2)]">
-            <button
-              type="button"
-              onClick={() => {
-                if (!variant.file_path) return;
-                const ext = variant.file_path.split(".").pop() ?? "png";
-                const labelSuffix = variantTags.length > 0 ? `_[${variantTags.map((t) => slugify(t.display_name)).join(",")}]` : "";
-                const filename = `${slugify(variant.project_name)}_${slugify(variant.avatar_name)}_${slugify(variant.variant_type ?? "other")}_${slugify(variant.variant_label)}${labelSuffix}.${ext}`;
-                const a = document.createElement("a");
-                a.href = variantMediaUrl(variant.file_path);
-                a.download = filename;
-                a.click();
-              }}
-              className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors"
-              title="Download"
-            >
-              <Download size={14} />
-            </button>
+            <Tooltip content="Download">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!variant.file_path) return;
+                  const ext = variant.file_path.split(".").pop() ?? "png";
+                  const labelSuffix =
+                    variantTags.length > 0
+                      ? `_[${variantTags.map((t) => slugify(t.display_name)).join(",")}]`
+                      : "";
+                  const filename = `${slugify(variant.project_name)}_${slugify(variant.avatar_name)}_${slugify(variant.variant_type ?? "other")}_${slugify(variant.variant_label)}${labelSuffix}.${ext}`;
+                  const a = document.createElement("a");
+                  a.href = variantMediaUrl(variant.file_path);
+                  a.download = filename;
+                  a.click();
+                }}
+                className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors"
+              >
+                <Download size={14} />
+              </button>
+            </Tooltip>
 
             <div className="w-px h-4 bg-[var(--color-border-default)]" />
 
-            <button
-              type="button"
-              onClick={onApprove}
-              disabled={!onApprove}
-              className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${variant.status_id === 2 ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-green)] hover:bg-[var(--color-surface-secondary)]"}`}
-              title={variant.status_id === 2 ? "Approved" : "Approve"}
-            >
-              <CheckCircle size={14} />
-            </button>
-            <button
-              type="button"
-              onClick={onReject}
-              disabled={!onReject}
-              className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${variant.status_id === 3 ? "text-[var(--color-data-red)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-red)] hover:bg-[var(--color-surface-secondary)]"}`}
-              title={variant.status_id === 3 ? "Rejected" : "Reject"}
-            >
-              <XCircle size={14} />
-            </button>
+            <Tooltip content={variant.status_id === 2 ? "Approved" : "Approve"}>
+              <button
+                type="button"
+                onClick={onApprove}
+                disabled={!onApprove}
+                className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${variant.status_id === 2 ? "text-[var(--color-data-green)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-green)] hover:bg-[var(--color-surface-secondary)]"}`}
+              >
+                <CheckCircle size={14} />
+              </button>
+            </Tooltip>
+            <Tooltip content={variant.status_id === 3 ? "Rejected" : "Reject"}>
+              <button
+                type="button"
+                onClick={onReject}
+                disabled={!onReject}
+                className={`p-1 rounded transition-colors disabled:opacity-30 disabled:pointer-events-none ${variant.status_id === 3 ? "text-[var(--color-data-red)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-data-red)] hover:bg-[var(--color-surface-secondary)]"}`}
+              >
+                <XCircle size={14} />
+              </button>
+            </Tooltip>
 
             <div className="flex-1" />
 
             <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={onPrev}
-                disabled={!onPrev}
-                className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors disabled:opacity-20 disabled:pointer-events-none"
-                title="Previous image"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <button
-                type="button"
-                onClick={onNext}
-                disabled={!onNext}
-                className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors disabled:opacity-20 disabled:pointer-events-none"
-                title="Next image"
-              >
-                <ChevronRight size={16} />
-              </button>
+              <Tooltip content="Previous image">
+                <button
+                  type="button"
+                  onClick={onPrev}
+                  disabled={!onPrev}
+                  className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+              </Tooltip>
+              <Tooltip content="Next image">
+                <button
+                  type="button"
+                  onClick={onNext}
+                  disabled={!onNext}
+                  className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors disabled:opacity-20 disabled:pointer-events-none"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </Tooltip>
             </div>
           </div>
 
@@ -847,7 +1170,8 @@ function ImagePreviewModal({
             onChange={setVariantNotes}
             onSave={(value) => {
               setVariantNotesSaving(true);
-              api.put(`/avatars/${variant.avatar_id}/media-variants/${variant.id}`, { notes: value })
+              api
+                .put(`/avatars/${variant.avatar_id}/media-variants/${variant.id}`, { notes: value })
                 .finally(() => setVariantNotesSaving(false));
             }}
             saving={variantNotesSaving}

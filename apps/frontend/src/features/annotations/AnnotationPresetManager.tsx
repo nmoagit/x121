@@ -9,7 +9,7 @@ import { useCallback, useState } from "react";
 
 import { Modal } from "@/components/composite";
 import { Stack } from "@/components/layout";
-import { Button, Input } from "@/components/primitives";
+import { Button, Input, Tooltip } from "@/components/primitives";
 import { Edit3, Plus, Trash2, X } from "@/tokens/icons";
 
 import {
@@ -123,13 +123,14 @@ export function AnnotationPresetManager({
               >
                 {editingId === preset.id ? (
                   <>
-                    <input
-                      type="color"
-                      value={editColor || "#6b7280"}
-                      onChange={(e) => setEditColor(e.target.value)}
-                      className="w-5 h-5 rounded cursor-pointer border-none bg-transparent"
-                      title="Preset color"
-                    />
+                    <Tooltip content="Preset color">
+                      <input
+                        type="color"
+                        value={editColor || "#6b7280"}
+                        onChange={(e) => setEditColor(e.target.value)}
+                        className="w-5 h-5 rounded cursor-pointer border-none bg-transparent"
+                      />
+                    </Tooltip>
                     <Input
                       size="sm"
                       value={editLabel}
@@ -162,22 +163,24 @@ export function AnnotationPresetManager({
                     <span className={`flex-1 ${TYPO_DATA}`}>
                       {preset.label}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => startEdit(preset)}
-                      className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors"
-                      title="Edit"
-                    >
-                      <Edit3 size={12} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(preset.id)}
-                      className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-data-red)] hover:bg-[var(--color-surface-secondary)] transition-colors"
-                      title="Delete"
-                    >
-                      <Trash2 size={12} />
-                    </button>
+                    <Tooltip content="Edit">
+                      <button
+                        type="button"
+                        onClick={() => startEdit(preset)}
+                        className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)] transition-colors"
+                      >
+                        <Edit3 size={12} />
+                      </button>
+                    </Tooltip>
+                    <Tooltip content="Delete">
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(preset.id)}
+                        className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-data-red)] hover:bg-[var(--color-surface-secondary)] transition-colors"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </Tooltip>
                   </>
                 )}
               </div>

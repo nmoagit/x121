@@ -5,7 +5,7 @@
  * as read-only reference and editable pipeline overrides.
  */
 
-import { Button, Input } from "@/components/primitives";
+import { Button, Input, Tooltip } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import {
   TERMINAL_BODY,
@@ -93,12 +93,11 @@ export function CategoryTemplatesSection({
                         </span>
                         <div className="flex-1 min-w-0">
                           {platformDefault && !hasOverride && (
-                            <span
-                              className="font-mono text-[10px] text-[var(--color-text-muted)] truncate block"
-                              title={`Platform default: ${platformDefault}`}
-                            >
-                              {platformDefault}
-                            </span>
+                            <Tooltip content={`Platform default: ${platformDefault}`}>
+                              <span className="font-mono text-[10px] text-[var(--color-text-muted)] truncate block">
+                                {platformDefault}
+                              </span>
+                            </Tooltip>
                           )}
                           <Input
                             value={pipelineOverride ?? ""}

@@ -8,7 +8,7 @@
 import { cn } from "@/lib/cn";
 import { Clock, Pause, Play, XCircle } from "@/tokens/icons";
 import { iconSizes } from "@/tokens/icons";
-import { Button ,  ContextLoader } from "@/components/primitives";
+import { Button, Tooltip,  ContextLoader } from "@/components/primitives";
 import { Stack } from "@/components/layout";
 import {
   TERMINAL_PANEL,
@@ -60,11 +60,12 @@ function QueueJobRow({ job }: { job: QueuedJob }) {
       <Stack direction="horizontal" gap={3} align="center" justify="between">
         {/* Priority indicator + job info */}
         <Stack direction="horizontal" gap={2} align="center">
-          <div
-            className="w-2 h-2 rounded-[var(--radius-full)] shrink-0"
-            style={{ backgroundColor: priorityColor(job.priority) }}
-            title={priorityLabel(job.priority)}
-          />
+          <Tooltip content={priorityLabel(job.priority)}>
+            <div
+              className="w-2 h-2 rounded-[var(--radius-full)] shrink-0"
+              style={{ backgroundColor: priorityColor(job.priority) }}
+            />
+          </Tooltip>
           <Stack direction="vertical" gap={1}>
             <span className={`${TYPO_DATA} truncate max-w-[180px]`}>
               {job.job_type}

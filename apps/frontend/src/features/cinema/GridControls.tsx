@@ -7,6 +7,7 @@
 
 import { useCallback, useRef, useState } from "react";
 
+import { Tooltip } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { Pause, Play, Volume2, VolumeX, Maximize2, Minimize2 } from "@/tokens/icons";
 
@@ -141,14 +142,15 @@ export function GridControls({
       {/* Global transport bar */}
       <div className="flex items-center gap-[var(--spacing-2)] px-[var(--spacing-2)] py-[var(--spacing-1)] bg-[var(--color-surface-primary)]/90 backdrop-blur-sm rounded-[var(--radius-md)]">
         {/* Play/Pause */}
-        <button
-          type="button"
-          onClick={handleTogglePlay}
-          className="p-[var(--spacing-1)] text-[var(--color-text-primary)] hover:text-[var(--color-action-primary)] transition-colors"
-          title={sync.isPlaying ? "Pause all" : "Play all"}
-        >
-          {sync.isPlaying ? <Pause size={20} /> : <Play size={20} />}
-        </button>
+        <Tooltip content={sync.isPlaying ? "Pause all" : "Play all"}>
+          <button
+            type="button"
+            onClick={handleTogglePlay}
+            className="p-[var(--spacing-1)] text-[var(--color-text-primary)] hover:text-[var(--color-action-primary)] transition-colors"
+          >
+            {sync.isPlaying ? <Pause size={20} /> : <Play size={20} />}
+          </button>
+        </Tooltip>
 
         {/* Timeline */}
         <div
@@ -197,44 +199,48 @@ export function GridControls({
                 </span>
 
                 {/* Mute toggle */}
-                <button
-                  type="button"
-                  onClick={() => toggleCellMute(i)}
-                  className="p-0.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
-                  title={state?.muted ? "Unmute" : "Mute"}
-                >
-                  {state?.muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-                </button>
+                <Tooltip content={state?.muted ? "Unmute" : "Mute"}>
+                  <button
+                    type="button"
+                    onClick={() => toggleCellMute(i)}
+                    className="p-0.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+                  >
+                    {state?.muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+                  </button>
+                </Tooltip>
 
                 {/* Solo (mute all except this) */}
-                <button
-                  type="button"
-                  onClick={() => muteAllExcept(i)}
-                  className="px-1 py-0.5 text-[var(--color-text-muted)] hover:text-[var(--color-action-primary)] transition-colors rounded-[var(--radius-sm)]"
-                  title="Solo (mute all others)"
-                >
-                  S
-                </button>
+                <Tooltip content="Solo (mute all others)">
+                  <button
+                    type="button"
+                    onClick={() => muteAllExcept(i)}
+                    className="px-1 py-0.5 text-[var(--color-text-muted)] hover:text-[var(--color-action-primary)] transition-colors rounded-[var(--radius-sm)]"
+                  >
+                    S
+                  </button>
+                </Tooltip>
 
                 {/* Zoom in */}
-                <button
-                  type="button"
-                  onClick={() => adjustZoom(i, "in")}
-                  className="p-0.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
-                  title={`Zoom in (${state?.zoom ?? 1}x)`}
-                >
-                  <Maximize2 size={14} />
-                </button>
+                <Tooltip content={`Zoom in (${state?.zoom ?? 1}x)`}>
+                  <button
+                    type="button"
+                    onClick={() => adjustZoom(i, "in")}
+                    className="p-0.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+                  >
+                    <Maximize2 size={14} />
+                  </button>
+                </Tooltip>
 
                 {/* Zoom out */}
-                <button
-                  type="button"
-                  onClick={() => adjustZoom(i, "out")}
-                  className="p-0.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
-                  title={`Zoom out (${state?.zoom ?? 1}x)`}
-                >
-                  <Minimize2 size={14} />
-                </button>
+                <Tooltip content={`Zoom out (${state?.zoom ?? 1}x)`}>
+                  <button
+                    type="button"
+                    onClick={() => adjustZoom(i, "out")}
+                    className="p-0.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+                  >
+                    <Minimize2 size={14} />
+                  </button>
+                </Tooltip>
               </div>
             );
           })}

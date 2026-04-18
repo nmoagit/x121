@@ -5,6 +5,7 @@
  * its synchronisation status with the library avatar.
  */
 
+import { Tooltip } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { Check, Copy } from "@/tokens/icons";
 
@@ -58,18 +59,19 @@ export function LinkedFieldIndicator({
 
   if (onToggle) {
     return (
-      <button
-        type="button"
-        onClick={onToggle}
-        className={cn(
-          baseClasses,
-          "cursor-pointer hover:opacity-80 transition-opacity",
-        )}
-        title={`Click to switch to ${mode === "linked" ? "copied" : "linked"}`}
-        data-testid={`field-indicator-${mode}`}
-      >
-        {content}
-      </button>
+      <Tooltip content={`Click to switch to ${mode === "linked" ? "copied" : "linked"}`}>
+        <button
+          type="button"
+          onClick={onToggle}
+          className={cn(
+            baseClasses,
+            "cursor-pointer hover:opacity-80 transition-opacity",
+          )}
+          data-testid={`field-indicator-${mode}`}
+        >
+          {content}
+        </button>
+      </Tooltip>
     );
   }
 

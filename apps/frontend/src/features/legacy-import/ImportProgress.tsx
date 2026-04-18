@@ -3,6 +3,7 @@
  */
 
 import type { ImportRunStatus, LegacyImportRun, RunReport } from "./types";
+import { Spinner } from "@/components/primitives";
 import { TYPO_CAPTION } from "@/lib/typography-tokens";
 
 /* --------------------------------------------------------------------------
@@ -68,10 +69,9 @@ export function ImportProgress({
           {STATUS_LABELS[statusName] ?? statusName}
         </span>
         {isActive && (
-          <span
-            data-testid="spinner"
-            className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"
-          />
+          <span data-testid="spinner" className="inline-flex">
+            <Spinner size="sm" />
+          </span>
         )}
       </div>
 

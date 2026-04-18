@@ -6,7 +6,7 @@
  * Skipped slots (no final clip) are shown in the progress indicator.
  */
 
-import { Badge, Button } from "@/components/primitives";
+import { Badge, Button, Tooltip } from "@/components/primitives";
 import type { ExpandedSceneSetting } from "@/features/scene-catalogue/types";
 import { clipKeys } from "@/features/scenes/hooks/useClipManagement";
 import { type Scene, type SceneVideoVersion, pickFinalClip, slotLabel } from "@/features/scenes/types";
@@ -373,20 +373,23 @@ export function SequencePlayer({ slots, scenes, onClose }: SequencePlayerProps) 
                 const isPast = isFinished || (hasStarted && idx < currentIndex);
 
                 return (
-                  <div
+                  <Tooltip
                     key={`${r.slot.scene_type_id}-${r.slot.track_id ?? "none"}`}
-                    title={`${r.label}${r.skipped ? " (skipped)" : ""}`}
-                    className={cn(
-                      "h-1.5 flex-1 rounded-full transition-colors duration-200",
-                      r.skipped
-                        ? "bg-[var(--color-surface-tertiary)]"
-                        : isCurrent
-                          ? "bg-[var(--color-action-primary)]"
-                          : isPast
-                            ? "bg-[var(--color-action-success)]"
-                            : "bg-[var(--color-border-secondary)]",
-                    )}
-                  />
+                    content={`${r.label}${r.skipped ? " (skipped)" : ""}`}
+                  >
+                    <div
+                      className={cn(
+                        "h-1.5 flex-1 rounded-full transition-colors duration-200",
+                        r.skipped
+                          ? "bg-[var(--color-surface-tertiary)]"
+                          : isCurrent
+                            ? "bg-[var(--color-action-primary)]"
+                            : isPast
+                              ? "bg-[var(--color-action-success)]"
+                              : "bg-[var(--color-border-secondary)]",
+                      )}
+                    />
+                  </Tooltip>
                 );
               })}
             </div>

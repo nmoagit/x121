@@ -11,6 +11,8 @@ import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
 import { ChevronDown } from "@/tokens/icons";
 
+import { Tooltip } from "./Tooltip";
+
 /* --------------------------------------------------------------------------
    Types
    -------------------------------------------------------------------------- */
@@ -128,11 +130,10 @@ export function SplitButton({
     setMenuPos({ top: rect.bottom + 4, left: rect.right });
   }, [open]);
 
-  return (
+  const content = (
     <div
       ref={containerRef}
       className={cn("relative flex", className)}
-      title={isDisabled ? disabledReason : undefined}
     >
       {/* Main button — flex-1 so it fills the available width */}
       <button
@@ -228,4 +229,9 @@ export function SplitButton({
       )}
     </div>
   );
+
+  if (isDisabled && disabledReason) {
+    return <Tooltip content={disabledReason}>{content}</Tooltip>;
+  }
+  return content;
 }

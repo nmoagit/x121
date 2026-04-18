@@ -7,6 +7,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { Tooltip } from "@/components/primitives";
 import { cn } from "@/lib/cn";
 import { X } from "@/tokens/icons";
 
@@ -216,19 +217,21 @@ export function CinemaMode({
       >
         {/* Top bar: exit button */}
         <div className="flex items-center justify-end p-[var(--spacing-4)] pointer-events-auto">
-          <button
-            type="button"
-            onClick={() => void exitFullscreen()}
-            className={cn(
-              "p-[var(--spacing-2)] rounded-[var(--radius-md)]",
-              "bg-[var(--color-surface-overlay)] text-[var(--color-text-primary)]",
-              "hover:bg-[var(--color-surface-tertiary)]",
-              "transition-colors duration-[var(--duration-fast)]",
-            )}
-            title="Exit cinema mode (Esc)"
-          >
-            <X size={20} />
-          </button>
+          <Tooltip content="Exit cinema mode (Esc)">
+            <button
+              type="button"
+              onClick={() => void exitFullscreen()}
+              className={cn(
+                "p-[var(--spacing-2)] rounded-[var(--radius-md)]",
+                "bg-[var(--color-surface-overlay)] text-[var(--color-text-primary)]",
+                "hover:bg-[var(--color-surface-tertiary)]",
+                "transition-colors duration-[var(--duration-fast)]",
+              )}
+              aria-label="Exit cinema mode (Esc)"
+            >
+              <X size={20} />
+            </button>
+          </Tooltip>
         </div>
 
         {/* Bottom bar: transport + review */}
@@ -242,14 +245,15 @@ export function CinemaMode({
         >
           {/* Transport info */}
           <div className="flex items-center gap-[var(--spacing-3)]">
-            <button
-              type="button"
-              onClick={player.togglePlay}
-              className="text-[var(--color-text-primary)] hover:text-[var(--color-action-primary)] transition-colors"
-              title={player.isPlaying ? "Pause (Space)" : "Play (Space)"}
-            >
-              {player.isPlaying ? "Pause" : "Play"}
-            </button>
+            <Tooltip content={player.isPlaying ? "Pause (Space)" : "Play (Space)"}>
+              <button
+                type="button"
+                onClick={player.togglePlay}
+                className="text-[var(--color-text-primary)] hover:text-[var(--color-action-primary)] transition-colors"
+              >
+                {player.isPlaying ? "Pause" : "Play"}
+              </button>
+            </Tooltip>
 
             <span className="text-xs font-mono text-[var(--color-text-secondary)]">
               {formatDuration(player.currentTime)} / {formatDuration(player.duration)}
