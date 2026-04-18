@@ -12,7 +12,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "capture": "playwright test",
+    "capture:chapter": "playwright test --grep"
   },
   "dependencies": {
     "@dagrejs/dagre": "^2.0.4",
@@ -41,6 +43,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.0",
+    "@playwright/test": "^1.59.1",
     "@storybook/addon-essentials": "^8.6.17",
     "@storybook/react": "^8.6.17",
     "@storybook/react-vite": "^8.5.0",
@@ -51,6 +54,7 @@
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react-swc": "^4.0.0",
     "jsdom": "^26.0.0",
+    "lucide-static": "^1.8.0",
     "storybook": "^8.5.0",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.0",
