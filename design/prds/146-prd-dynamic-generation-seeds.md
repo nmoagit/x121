@@ -1,6 +1,6 @@
-# PRD-142: Dynamic Generation Seeds
+# PRD-146: Dynamic Generation Seeds
 
-**Document ID:** 142-prd-dynamic-generation-seeds
+**Document ID:** 146-prd-dynamic-generation-seeds
 **Status:** Draft
 **Author:** AI Product Manager
 **Created:** 2026-03-24

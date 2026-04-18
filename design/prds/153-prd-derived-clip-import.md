@@ -14,8 +14,8 @@ This PRD extends the existing clip import system with **parent-child version rel
 | **Depends on** | PRD-109 | Video Player Controls |
 | **Depends on** | PRD-70 | On-Frame Annotation & Markup |
 | **Depends on** | PRD-149 | Frame Range Annotations & Text Presets |
-| **Extends** | PRD-12 | Scene Video Versioning (adds parent_version_id) |
-| **Extends** | PRD-10 | Scene Management (import flow) |
+| **Extends** | PRD-109 | Scene Video Versioning (adds parent_version_id) |
+| **Extends** | PRD-109 | Scene Management (import flow) |
 | **Extends** | PRD-152 | Annotation Playback Mode (works on derived clips) |
 
 ## 3. Goals
